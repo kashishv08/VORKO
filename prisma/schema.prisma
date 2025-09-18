@@ -1,0 +1,119 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  email    String   @unique
+  password String
+  role     Role
+  bio      String?
+  skills   String[]
+  avatar   String?
+
+  projects  Project[]  @relation("ClientProjects")
+  proposals Proposal[]
+
+  clientContracts     Contract[] @relation("ClientContracts")
+  freelancerContracts Contract[] @relation("FreelancerContracts")
+
+  messages Message[] @relation("UserMessages")
+  reviews  Review[]  @relation("UserReviews")
+
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  CLIENT
+  FREELANCER
+}
+
+enum ProjectStatus {
+  OPEN
+  HIRED
+  CLOSED
+}
+
+model Project {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  budget      Float
+  deadline    DateTime
+  status      ProjectStatus @default(OPEN)
+  clientId    String        @db.ObjectId
+  client      User          @relation("ClientProjects", fields: [clientId], references: [id])
+  proposals   Proposal[]
+  contract    Contract?
+  createdAt   DateTime      @default(now())
+}
+
+model Proposal {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  coverLetter  String
+  amount       Float
+  status       ProposalStatus @default(SUBMITTED)
+  projectId    String         @db.ObjectId
+  project      Project        @relation(fields: [projectId], references: [id])
+  freelancerId String         @db.ObjectId
+  freelancer   User           @relation(fields: [freelancerId], references: [id])
+  createdAt    DateTime       @default(now())
+}
+
+enum ProposalStatus {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+}
+
+model Contract {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  projectId String  @unique @db.ObjectId
+  project   Project @relation(fields: [projectId], references: [id])
+
+  clientId String @db.ObjectId
+  client   User   @relation("ClientContracts", fields: [clientId], references: [id])
+
+  freelancerId String @db.ObjectId
+  freelancer   User   @relation("FreelancerContracts", fields: [freelancerId], references: [id])
+
+  status      ContractStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  completedAt DateTime?
+  messages    Message[]
+  reviews     Review[]
+}
+
+enum ContractStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model Message {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  content    String
+  senderId   String   @db.ObjectId
+  sender     User     @relation("UserMessages", fields: [senderId], references: [id])
+  contractId String   @db.ObjectId
+  contract   Contract @relation(fields: [contractId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model Review {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  comment    String
+  contractId String   @db.ObjectId
+  contract   Contract @relation(fields: [contractId], references: [id])
+  reviewerId String   @db.ObjectId
+  reviewer   User     @relation("UserReviews", fields: [reviewerId], references: [id])
+  createdAt  DateTime @default(now())
+}
