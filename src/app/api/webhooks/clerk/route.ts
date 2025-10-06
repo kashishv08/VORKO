@@ -1,4 +1,3 @@
-// app/api/webhooks/clerk/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { headers } from "next/headers";
@@ -42,30 +41,25 @@ export async function POST(req: NextRequest) {
     const name = ((first_name || "") + " " + (last_name || "")).trim();
     const role = unsafe_metadata?.role ?? public_metadata?.role ?? "CLIENT";
 
-    // check existing by email
+    // check by clerkId
     const existingUser = await prismaClient.user.findUnique({
-      where: { email },
+      where: { clerkId },
     });
 
     if (existingUser) {
       if (existingUser.role === role) {
-        // already exists with same role -> do nothing (idempotent)
-        console.log("User exists, same role -> skipping create.");
+        // already exists -> do nothing
         return NextResponse.json({ status: "exists", role });
       }
 
-      // role conflict: do not overwrite existing user
-      console.warn(
-        `Role conflict for ${email}: existing=${existingUser.role} attempted=${role}`
-      );
-      // reply with 400 so it can be observed in logs; frontend will handle via /onboard check instead
+      // role conflict
       return NextResponse.json(
         { status: "role_conflict", existingRole: existingUser.role },
         { status: 400 }
       );
     }
 
-    // create new user
+    // create user in DB BEFORE onboarding
     await prismaClient.user.create({
       data: {
         clerkId,
@@ -76,10 +70,11 @@ export async function POST(req: NextRequest) {
         skills: [],
         avatar: image_url ?? "",
         onboardingComplete: false,
+        password: "",
       },
     });
 
-    // sync role metadata into Clerk public metadata (optional)
+    // update Clerk public metadata
     if (public_metadata?.role !== role) {
       await clerkClient.users.updateUserMetadata(clerkId, {
         publicMetadata: { ...public_metadata, role },
@@ -89,7 +84,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "created", role });
   }
 
-  // safe delete handling
   if (type === "user.deleted") {
     const clerkId = data.id;
     try {
@@ -105,36 +99,17 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (!user) {
-        return NextResponse.json({ status: "not_found" });
-      }
+      if (!user) return NextResponse.json({ status: "not_found" });
 
-      // if user has any linked records -> do NOT hard delete
-      const hasLinked =
-        (user.projects?.length || 0) +
-        (user.proposals?.length || 0) +
-        (user.clientContracts?.length || 0) +
-        (user.freelancerContracts?.length || 0) +
-        (user.messages?.length || 0) +
-        (user.reviews?.length || 0);
+      // delete related records first
+      await prismaClient.$transaction([
+        prismaClient.project.deleteMany({ where: { clientId: user.id } }),
+        prismaClient.contract.deleteMany({
+          where: { OR: [{ clientId: user.id }, { freelancerId: user.id }] },
+        }),
+        prismaClient.user.delete({ where: { id: user.id } }),
+      ]);
 
-      if (hasLinked) {
-        // Option: mark as soft-deleted (or just log & return)
-        await prismaClient.user.update({
-          where: { clerkId },
-          data: { onboardingComplete: false }, // or set deletedAt: new Date() if you add that field
-        });
-        console.warn(
-          `User ${clerkId} not deleted because linked records exist.`
-        );
-        return NextResponse.json(
-          { status: "has_linked_records" },
-          { status: 400 }
-        );
-      }
-
-      // safe to delete
-      await prismaClient.user.delete({ where: { clerkId } });
       return NextResponse.json({ status: "deleted" });
     } catch (err) {
       console.error("Webhook delete error", err);

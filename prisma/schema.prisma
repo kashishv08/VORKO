@@ -52,7 +52,7 @@ model Project {
   deadline    DateTime
   status      ProjectStatus @default(OPEN)
   clientId    String        @db.ObjectId
-  client      User          @relation("ClientProjects", fields: [clientId], references: [id])
+  client      User          @relation("ClientProjects", fields: [clientId], references: [id], onDelete: Cascade)
   proposals   Proposal[]
   contract    Contract?
   createdAt   DateTime      @default(now())
@@ -66,7 +66,7 @@ model Proposal {
   projectId    String         @db.ObjectId
   project      Project        @relation(fields: [projectId], references: [id])
   freelancerId String         @db.ObjectId
-  freelancer   User           @relation(fields: [freelancerId], references: [id])
+  freelancer   User           @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
   createdAt    DateTime       @default(now())
 }
 
@@ -82,10 +82,10 @@ model Contract {
   project   Project @relation(fields: [projectId], references: [id])
 
   clientId String @db.ObjectId
-  client   User   @relation("ClientContracts", fields: [clientId], references: [id])
+  client   User   @relation("ClientContracts", fields: [clientId], references: [id], onDelete: Cascade)
 
   freelancerId String @db.ObjectId
-  freelancer   User   @relation("FreelancerContracts", fields: [freelancerId], references: [id])
+  freelancer   User   @relation("FreelancerContracts", fields: [freelancerId], references: [id], onDelete: Cascade)
 
   status      ContractStatus @default(ACTIVE)
   createdAt   DateTime       @default(now())
@@ -104,7 +104,7 @@ model Message {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   content    String
   senderId   String   @db.ObjectId
-  sender     User     @relation("UserMessages", fields: [senderId], references: [id])
+  sender     User     @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
   contractId String   @db.ObjectId
   contract   Contract @relation(fields: [contractId], references: [id])
   createdAt  DateTime @default(now())
@@ -116,6 +116,6 @@ model Review {
   contractId String   @db.ObjectId
   contract   Contract @relation(fields: [contractId], references: [id])
   reviewerId String   @db.ObjectId
-  reviewer   User     @relation("UserReviews", fields: [reviewerId], references: [id])
+  reviewer   User     @relation("UserReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
 }

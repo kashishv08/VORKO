@@ -36,12 +36,12 @@ export default function Onboarding() {
 
         const data = await res.json();
 
-        if (data.exists) {
-          // show a warning toast and redirect to user's dashboard
+        // data.exists === true && data.onboardingComplete === true;
+
+        if (data.exists && data.onboardingComplete) {
           toast.warning(
             "Account already exists. Redirecting you to your dashboard..."
           );
-          // route to the existing role's dashboard (client or freelancer)
           setTimeout(() => {
             const role = (data.role || "CLIENT").toLowerCase();
             router.push(`/${role}/dashboard`);
