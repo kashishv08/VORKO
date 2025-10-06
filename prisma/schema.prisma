@@ -10,14 +10,16 @@ datasource db {
 }
 
 model User {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  name     String
-  email    String   @unique
-  password String
-  role     Role
-  bio      String?
-  skills   String[]
-  avatar   String?
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId            String   @unique
+  name               String
+  email              String   @unique
+  password           String
+  role               Role
+  bio                String?
+  skills             String[]
+  avatar             String?
+  onboardingComplete Boolean  @default(false)
 
   projects  Project[]  @relation("ClientProjects")
   proposals Proposal[]

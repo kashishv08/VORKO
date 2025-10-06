@@ -1,4 +1,4 @@
-import SideBar from "@/src/components/freelancer/freelancer-sidebar";
+import { Sidebar } from "@/src/components/freelancer/freelancer-sidebar";
 
 export default function RootLayout({
   children,
@@ -7,7 +7,9 @@ export default function RootLayout({
 }>) {
   return (
     <div className="flex w-full">
-      <SideBar />
+      <div className="">
+        <Sidebar />
+      </div>
       <div className="w-full">{children}</div>
     </div>
   );

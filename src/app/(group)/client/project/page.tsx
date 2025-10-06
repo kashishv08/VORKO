@@ -1,113 +1,170 @@
-// src/app/(group)/client/project/page.tsx
+"use client";
+
 import AddProject from "@/src/components/client/addProject";
 import { CLIENT_PROJ } from "@/src/lib/gql/queries";
-import { getUserFromCookie } from "@/src/lib/helper";
 import { gqlClient } from "@/src/lib/service/gql";
 import { Project } from "@prisma/client";
-import { Tabs, Box, Text } from "@radix-ui/themes";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+import * as Tabs from "@radix-ui/react-tabs";
+import ClientContractsPage from "../contract/page";
 
-export default async function MyProjectsPage() {
-  const user = await getUserFromCookie();
-  if (!user) throw new Error("User not logged in");
+type TabValue = "active" | "posted" | "contracts";
 
-  const proj: { clientAllPostedProjects: Project[] } = await gqlClient.request(
-    CLIENT_PROJ,
-    { id: user.id }
-  );
+export default function MyProjectsPage() {
+  const { isLoaded, userId } = useAuth();
+  const [activeProjects, setActiveProjects] = useState<Project[]>([]);
+  const [allProj, setAllProj] = useState<Project[]>([]);
 
-  const allProj = proj.clientAllPostedProjects || [];
+  useEffect(() => {
+    if (!isLoaded || !userId) return;
 
-  const activeProjects = allProj.filter((p) => p.status === "OPEN" || p.status === "HIRED");
+    const fetchProj = async () => {
+      const proj: { clientAllPostedProjects: Project[] } =
+        await gqlClient.request(CLIENT_PROJ, { id: userId });
 
-  const formatDate = (timestamp: number) => {
-    const date = new Date(Number(timestamp));
-    return date.toLocaleDateString("en-GB", {
+      const all = proj.clientAllPostedProjects || [];
+      setAllProj(all);
+
+      const active = all.filter(
+        (p) => p.status === "OPEN" || p.status === "HIRED"
+      );
+      setActiveProjects(active);
+    };
+
+    fetchProj();
+  }, [isLoaded, userId]);
+
+  const formatDate = (deadline?: number | null) => {
+    if (!deadline) return "-";
+    return new Date(Number(deadline)).toLocaleDateString("en-GB", {
       day: "2-digit",
-      month: "long",
+      month: "short",
       year: "numeric",
     });
   };
 
   const renderProjectCard = (project: Project) => {
-    const statusColor =
+    const statusStyle =
       project.status === "OPEN"
-        ? "bg-green-100 text-green-700"
+        ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
         : project.status === "HIRED"
-        ? "bg-yellow-100 text-yellow-700"
-        : "bg-gray-100 text-gray-700";
+        ? "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300"
+        : "bg-gray-50 text-gray-600 dark:bg-gray-800/20 dark:text-gray-300";
 
     return (
-      <div key={project.id} className="border rounded-lg p-4 flex justify-between items-start">
-        <div>
-          <h2 className="text-lg font-semibold">{project.title}</h2>
-          <p className="text-sm text-gray-600">{project.description}</p>
-          <div className="flex gap-2 mt-3">
-            <Link href={`/client/project/${project.id}`} className="px-3 py-1 border rounded-md text-sm hover:bg-gray-100">View</Link>
-            <button className="px-3 py-1 border rounded-md text-sm hover:bg-gray-100">Edit</button>
-            <button className="px-3 py-1 border rounded-md text-sm hover:bg-gray-100">Delete</button>
-            <button className="px-3 py-1 bg-gray-100 rounded-md text-sm hover:bg-gray-200">View Proposals</button>
-          </div>
-        </div>
-        <div className="text-right">
-          <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${statusColor}`}>
-            {project.status}
+      <div
+        key={project.id}
+        className="w-full mr-6 mt-6 mb-6 flex flex-col md:flex-row justify-between gap-6 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 transition hover:shadow-md"
+      >
+        {/* Left */}
+        <div className="flex-1">
+          <span className="inline-block px-3 py-1 mb-2 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+            General
           </span>
-          <p className="font-semibold mt-1">${project.budget}</p>
-          <p className="text-sm text-gray-500">{formatDate(Number(project.deadline))}</p>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            {project.title}
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+            {project.description}
+          </p>
+        </div>
+
+        {/* Right */}
+        <div className="flex flex-col items-start md:items-end justify-between min-w-[220px] mt-4 md:mt-0">
+          <div className="flex flex-col items-start md:items-end gap-2">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold ${statusStyle}`}
+            >
+              {project.status}
+            </span>
+            <p className="font-bold text-green-600 dark:text-green-400 mt-2">
+              ${project.budget}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {formatDate(Number(project.deadline))}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 mt-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {0} proposals
+            </p>
+            <Link
+              href={`/client/project/${project.id}`}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium border border-green-600 dark:border-green-400 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-800/40 transition"
+            >
+              View
+            </Link>
+          </div>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="px-8 py-12 w-full">
+    <div className="px-6 md:px-12 py-10 w-full max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">My Projects</h1>
-        <AddProject />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+          My Projects
+        </h1>
+        <AddProject
+          setActiveProject={setActiveProjects}
+          setAllProj={setAllProj}
+        />
       </div>
 
       {/* Tabs */}
-      <Tabs.Root defaultValue="activeProjects" className="w-full max-w-5xl mx-auto">
-        <Tabs.List className="flex gap-4 border-b pb-2 mb-4">
-          <Tabs.Trigger
-            value="activeProjects"
-            className="px-4 py-2 text-sm font-medium rounded-t-md data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 text-gray-500 hover:text-gray-700"
-          >
-            Active Projects
-          </Tabs.Trigger>
-          <Tabs.Trigger
-            value="postedProjects"
-            className="px-4 py-2 text-sm font-medium rounded-t-md data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 text-gray-500 hover:text-gray-700"
-          >
-            Posted Projects
-          </Tabs.Trigger>
+      <Tabs.Root defaultValue="active" className="w-full">
+        <Tabs.List className="flex gap-2 border-b border-gray-300 dark:border-gray-700 mb-8 overflow-x-auto">
+          {["active", "posted", "contracts"].map((tab) => (
+            <Tabs.Trigger
+              key={tab}
+              value={tab as TabValue}
+              className="
+                px-5 py-3 text-sm font-medium rounded-t-lg transition-colors
+                data-[state=active]:bg-green-600 data-[state=active]:text-white
+                data-[state=inactive]:bg-gray-100 dark:data-[state=inactive]:bg-gray-800
+                data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-300
+                hover:data-[state=inactive]:bg-green-50 dark:hover:data-[state=inactive]:bg-green-900/30
+                whitespace-nowrap
+              "
+            >
+              {tab === "active"
+                ? "My Projects"
+                : tab === "posted"
+                ? "Posted Projects"
+                : "Active Contracts"}
+            </Tabs.Trigger>
+          ))}
         </Tabs.List>
 
-        <Box pt="3">
-          {/* Active Projects */}
-          <Tabs.Content value="activeProjects">
+        <div className="space-y-6">
+          <Tabs.Content value="active">
             {activeProjects.length > 0 ? (
-              <div className="space-y-4">{activeProjects.map(renderProjectCard)}</div>
+              activeProjects.map(renderProjectCard)
             ) : (
-              <Text size="2" className="text-gray-500">
-                No active projects.
-              </Text>
+              <p className="text-center text-gray-500 dark:text-gray-400">
+                No projects found.
+              </p>
             )}
           </Tabs.Content>
 
-          {/* Posted Projects */}
-          <Tabs.Content value="postedProjects">
+          <Tabs.Content value="posted">
             {allProj.length > 0 ? (
-              <div className="space-y-4">{allProj.map(renderProjectCard)}</div>
+              allProj.map(renderProjectCard)
             ) : (
-              <Text size="2" className="text-gray-500">
-                No projects posted yet.
-              </Text>
+              <p className="text-center text-gray-500 dark:text-gray-400">
+                No projects found.
+              </p>
             )}
           </Tabs.Content>
-        </Box>
+
+          <Tabs.Content value="contracts">
+            <ClientContractsPage />
+          </Tabs.Content>
+        </div>
       </Tabs.Root>
     </div>
   );

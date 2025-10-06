@@ -23,7 +23,7 @@ function UserContextProvider({
   children: ReactNode;
   user?: userNoPass;
 }) {
-  console.log("provider User", user);
+  // console.log("provider User", user);
   return (
     <div>
       <UserContext.Provider value={{ user }}>{children}</UserContext.Provider>

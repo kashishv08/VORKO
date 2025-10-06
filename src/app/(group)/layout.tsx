@@ -1,24 +1,21 @@
-import UserContextProvider, {
-  userNoPass,
-} from "@/src/components/context/UserContextProvider";
-import Header from "@/src/components/Header";
-import { getUserFromCookie } from "@/src/lib/helper";
-import { redirect } from "next/navigation";
+"use client";
+import { Header } from "@/src/components/Header";
+import { Theme } from "@radix-ui/themes";
 import { ReactNode } from "react";
+import { Toaster } from "sonner";
 
-async function layout({ children }: { children: ReactNode }) {
-  const user = (await getUserFromCookie()) as userNoPass;
-  if (!user) redirect("/login");
-  console.log("layout user", user);
-
+function Layout({ children }: { children: ReactNode }) {
   return (
-    <div>
-      <UserContextProvider user={user}>
-        <Header />
-        {children}
-      </UserContextProvider>
-    </div>
+    <Theme>
+      <div className="relative w-full">
+        <div className="fixed w-full z-10 top-0 left-0">
+          <Header />
+        </div>
+        <div className="pt-16">{children}</div>
+      </div>
+      <Toaster position="top-right" />
+    </Theme>
   );
 }
 
-export default layout;
+export default Layout;

@@ -1,62 +1,42 @@
-import { RoleType } from "@/generated/prisma";
-import { generateToken } from "@/src/lib/service/jwt";
+import { clerkClient } from "@/src/lib/service/clerk";
 import { prismaClient } from "@/src/lib/service/prisma";
-import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
+import { currentUser } from "@clerk/nextjs/server";
 
-export const createUser = async (
-  _: any,
+export const completeOnboarding = async (
+  _: unknown,
   args: {
-    name: string;
-    email: string;
-    password: string;
-    role: RoleType;
+    skills: string[];
+    bio: string;
   }
 ) => {
-  const cookie = await cookies();
-  const isUser = await prismaClient.user.findUnique({
-    where: {
-      email: args.email,
+  const user = await currentUser();
+  if (!user) throw new Error("User not authenticated.");
+
+  const role =
+    (user.publicMetadata?.role as "FREELANCER" | "CLIENT") ?? "CLIENT";
+
+  await clerkClient.users.updateUser(user.id, {
+    publicMetadata: {
+      onboardingComplete: true,
+      role,
+      bio: args.bio,
+      skills: args.skills || [],
     },
   });
-  if (isUser) {
-    return false;
-  }
 
-  const hashedPassword = await bcrypt.hash(args.password, 10);
-  const user = await prismaClient.user.create({
+  const updated = await prismaClient.user.update({
+    where: { clerkId: user.id },
     data: {
-      name: args.name,
-      email: args.email,
-      role: args.role,
-      password: hashedPassword,
+      onboardingComplete: true,
+      role,
+      bio: args.bio,
+      skills: args.skills || [],
+    },
+    include: {
+      projects: true,
+      proposals: true,
     },
   });
 
-  const token = generateToken({
-    id: user.id,
-  });
-  cookie.set("vorkoToken", token);
-  return true;
-};
-
-export const loginUser = async (
-  _: any,
-  args: {
-    email: string;
-    password: string;
-  }
-) => {
-  const cookie = await cookies();
-  const user = await prismaClient.user.findUnique({
-    where: {
-      email: args.email,
-    },
-  });
-  if (!user) return false;
-  const pwdCorrect = bcrypt.compare(args.password, user.password);
-  if (!pwdCorrect) return false;
-  const token = generateToken({ id: user.id });
-  cookie.set("vorkoToken", token);
-  return true;
+  return updated;
 };

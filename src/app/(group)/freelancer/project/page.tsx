@@ -1,22 +1,23 @@
 // src/app/(group)/client/project/page.tsx
-import AddProject from "@/src/components/client/addProject";
-import { CLIENT_PROJ } from "@/src/lib/gql/queries";
-import { getUserFromCookie } from "@/src/lib/helper";
+import { ALL_CLIENTS_PROJECTS } from "@/src/lib/gql/queries";
 import { gqlClient } from "@/src/lib/service/gql";
+import { auth } from "@clerk/nextjs/server";
 import { Project } from "@prisma/client";
 import { Text } from "@radix-ui/themes";
 import Link from "next/link";
 
 export default async function MyProjectsPage() {
-  const user = await getUserFromCookie();
-  if (!user) throw new Error("User not logged in");
+  const { userId } = await auth();
+  // console.log(userId);
+  if (!userId) throw new Error("User not logged in");
 
-  const proj: { clientAllPostedProjects: Project[] } = await gqlClient.request(
-    CLIENT_PROJ,
-    { id: user.id }
+  const proj: { allClientsProject: Project[] } = await gqlClient.request(
+    ALL_CLIENTS_PROJECTS
   );
 
-  const openProjects = (proj.clientAllPostedProjects || []).filter(
+  // console.log(proj);
+
+  const openProjects = (proj.allClientsProject || []).filter(
     (p) => p.status === "OPEN"
   );
 

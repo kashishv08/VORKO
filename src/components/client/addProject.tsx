@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { CREATE_PROJ } from "@/src/lib/gql/mutation"
-import { gqlClient } from "@/src/lib/service/gql"
+import { useState, useRef } from "react";
+import { CREATE_PROJ } from "@/src/lib/gql/mutation";
+import { gqlClient } from "@/src/lib/service/gql";
 import {
   Dialog,
   Button,
@@ -10,58 +10,85 @@ import {
   Text,
   TextField,
   Select,
-} from "@radix-ui/themes"
+} from "@radix-ui/themes";
+import { Project } from "@prisma/client";
 
-export default function AddProject() {
-  // State for form fields
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [budget, setBudget] = useState<number | "">("")
-  const [deadline, setDeadline] = useState("")
-  const [status, setStatus] = useState("OPEN")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+export default function AddProject({
+  setAllProj,
+  setActiveProject,
+}: {
+  setAllProj: React.Dispatch<React.SetStateAction<Project[]>>;
+  setActiveProject: React.Dispatch<React.SetStateAction<Project[]>>;
+}) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [budget, setBudget] = useState<number | "">("");
+  const [deadline, setDeadline] = useState("");
+  const [status, setStatus] = useState("OPEN");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const closeDialogRef = useRef<HTMLButtonElement>(null);
+
+  const validate = () => {
+    const newErrors: { [key: string]: string } = {};
+    if (!title.trim()) newErrors.title = "Title is required";
+    if (!description.trim()) newErrors.description = "Description is required";
+    if (budget === "" || budget <= 0)
+      newErrors.budget = "Budget must be a positive number";
+    if (!deadline) newErrors.deadline = "Deadline is required";
+    else if (new Date(deadline) < new Date())
+      newErrors.deadline = "Deadline must be in the future";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleAddProject = async () => {
-    // Simple validation
-    if (!title || !description || !budget || !deadline) {
-      setError("Please fill all fields")
-      return
-    }
-
-    setLoading(true)
-    setError("")
+    if (!validate()) return;
+    setLoading(true);
 
     try {
       const variables = {
         title,
         description,
-        budget: parseFloat(budget as any),
+        budget: Number(budget),
         deadline,
         status,
-      }
+      };
+      const res: { createProject: Project } = await gqlClient.request(
+        CREATE_PROJ,
+        variables
+      );
+      const project = res.createProject;
 
-      const res = await gqlClient.request(CREATE_PROJ, variables)
-      console.log("Project created:", res)
+      if (project.status === "OPEN")
+        setActiveProject((prev) => [...prev, project]);
+      setAllProj((prev) => [...prev, project]);
+
+      // ✅ Close dialog programmatically
+      closeDialogRef.current?.click();
 
       // Reset form
-      setTitle("")
-      setDescription("")
-      setBudget("")
-      setDeadline("")
-      setStatus("OPEN")
+      setTitle("");
+      setDescription("");
+      setBudget("");
+      setDeadline("");
+      setStatus("OPEN");
+      setErrors({});
     } catch (err) {
-      console.error(err)
-      setError("Failed to create project")
+      console.error(err);
+      setErrors({ submit: "Failed to create project" });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog.Root>
       <Dialog.Trigger>
-        <Button>+ Post New Project</Button>
+        <Button style={{ backgroundColor: "green", cursor: "pointer" }}>
+          + Post New Project
+        </Button>
       </Dialog.Trigger>
 
       <Dialog.Content maxWidth="500px">
@@ -71,7 +98,6 @@ export default function AddProject() {
         </Dialog.Description>
 
         <Flex direction="column" gap="3">
-          {/* Title */}
           <label>
             <Text as="div" size="2" mb="1" weight="bold">
               Title
@@ -80,10 +106,15 @@ export default function AddProject() {
               placeholder="Enter project title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              aria-invalid={!!errors.title}
             />
+            {errors.title && (
+              <Text color="red" size="2">
+                {errors.title}
+              </Text>
+            )}
           </label>
 
-          {/* Description */}
           <label>
             <Text as="div" size="2" mb="1" weight="bold">
               Description
@@ -92,10 +123,15 @@ export default function AddProject() {
               placeholder="Enter project description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              aria-invalid={!!errors.description}
             />
+            {errors.description && (
+              <Text color="red" size="2">
+                {errors.description}
+              </Text>
+            )}
           </label>
 
-          {/* Budget */}
           <label>
             <Text as="div" size="2" mb="1" weight="bold">
               Budget ($)
@@ -104,11 +140,18 @@ export default function AddProject() {
               type="number"
               placeholder="Enter budget"
               value={budget}
-              onChange={(e) => setBudget(e.target.value === "" ? "" : Number(e.target.value))}
+              onChange={(e) =>
+                setBudget(e.target.value === "" ? "" : Number(e.target.value))
+              }
+              aria-invalid={!!errors.budget}
             />
+            {errors.budget && (
+              <Text color="red" size="2">
+                {errors.budget}
+              </Text>
+            )}
           </label>
 
-          {/* Deadline */}
           <label>
             <Text as="div" size="2" mb="1" weight="bold">
               Deadline
@@ -117,11 +160,16 @@ export default function AddProject() {
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
+              aria-invalid={!!errors.deadline}
             />
+            {errors.deadline && (
+              <Text color="red" size="2">
+                {errors.deadline}
+              </Text>
+            )}
           </label>
 
-          {/* Status */}
-          <label>
+          {/* <label>
             <Text as="div" size="2" mb="1" weight="bold">
               Status
             </Text>
@@ -133,23 +181,31 @@ export default function AddProject() {
                 <Select.Item value="CLOSED">CLOSED</Select.Item>
               </Select.Content>
             </Select.Root>
-          </label>
+          </label> */}
 
-          {error && <Text color="red">{error}</Text>}
+          {errors.submit && <Text color="red">{errors.submit}</Text>}
         </Flex>
 
-        {/* Actions */}
         <Flex gap="3" mt="4" justify="end">
           <Dialog.Close>
-            <Button variant="soft" color="gray">
+            <Button variant="soft" color="gray" className="cursor-pointer">
               Cancel
             </Button>
           </Dialog.Close>
-          <Button onClick={handleAddProject} disabled={loading}>
+
+          <Dialog.Close>
+            <button ref={closeDialogRef} style={{ display: "none" }} />
+          </Dialog.Close>
+
+          <Button
+            onClick={handleAddProject}
+            disabled={loading}
+            style={{ backgroundColor: "green", cursor: "pointer" }}
+          >
             {loading ? "Saving..." : "Save Project"}
           </Button>
         </Flex>
       </Dialog.Content>
     </Dialog.Root>
-  )
+  );
 }

@@ -1,32 +1,49 @@
-import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { ApolloServer } from "@apollo/server";
+import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { NextRequest } from "next/server";
-import {typeDefs} from "./typeDef"
-import { createUser, loginUser } from "./resolvers/user";
-import { clientAllPostedProjects, createProject, getProjectById } from "./resolvers/client";
-
-
+import { typeDefs } from "./typeDef";
+import {
+  createProject,
+  clientAllPostedProjects,
+  getProjectById,
+  acceptProposal,
+  rejectProposal,
+  allProposals,
+  getClientActiveContracts,
+  viewProposal,
+  contractById,
+} from "./resolvers/client";
+import { allClientsProject, submitProposal } from "./resolvers/freelancer";
+import { completeOnboarding } from "./resolvers/user";
+import { generateChatToken, getUserChats } from "./resolvers/chat";
 
 const resolvers = {
   Query: {
-    loginUser,
     clientAllPostedProjects,
     getProjectById,
+    allClientsProject,
+    viewProposal,
+    allProposals,
+    getClientActiveContracts,
+    contractById,
+    getUserChats,
   },
   Mutation: {
-    createUser,
-    createProject
-  }
+    completeOnboarding,
+    createProject,
+    submitProposal,
+    acceptProposal,
+    rejectProposal,
+    generateChatToken,
+  },
 };
 
-const server = new ApolloServer({
-    typeDefs,
-    resolvers,
-});
+const server = new ApolloServer({ typeDefs, resolvers });
 
-// Typescript: req has the type NextRequest
 const handler = startServerAndCreateNextHandler<NextRequest>(server, {
-    context: async req => ({ req }),
+  context: async (req: NextRequest) => {
+    return { req };
+  },
 });
 
 export { handler as GET, handler as POST };
