@@ -1,19 +1,17 @@
 import { Sidebar } from "@/src/components/client/Sidebar";
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // const user = await getUserFromDb();
   return (
-    // <UserContextProvider user={user}>
-    <div className="flex w-full justify-between">
-      <div className="">
-        <Sidebar />
-      </div>
-      <div className="w-full">{children}</div>
+    <div className="flex w-full h-screen">
+      {/* Sidebar is fixed */}
+      <Sidebar />
+
+      {/* Main content */}
+      <main className={`flex-1 ml-16 h-screen overflow-auto`}>{children}</main>
     </div>
-    // </UserContextProvider>
   );
 }

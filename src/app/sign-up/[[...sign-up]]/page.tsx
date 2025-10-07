@@ -1,75 +1,59 @@
 "use client";
-import { useSearchParams, useRouter } from "next/navigation";
-import { SignUp } from "@clerk/nextjs";
-import { useUser } from "@clerk/nextjs";
+import { useRouter, useSearchParams } from "next/navigation";
+import { SignUp, useUser } from "@clerk/nextjs";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 export default function SignUpPage() {
   const params = useSearchParams();
+  const role = params.get("role");
+  const { user } = useUser();
   const router = useRouter();
-  const role = params.get("role") || "CLIENT";
-  const { isSignedIn, user } = useUser();
+
+  console.log("signup", role);
 
   useEffect(() => {
-    if (isSignedIn && !!user) {
-      router.push(`/onboarding?role=${role}`);
-    }
-  }, [isSignedIn, user, role, router]);
+    if (!role) return;
 
-  if (!isSignedIn) {
-    return (
-      <div className="min-h-screen flex flex-col justify-center items-center">
-        <div className="mt-10">
-          <SignUp
-            path="/sign-up"
-            signInUrl="/sign-in"
-            afterSignUpUrl={`/onboarding?role=${role}`}
-            unsafeMetadata={{ role }}
-            appearance={{
-              elements: {
-                card: "pt-2",
-                headerTitle: () => (
-                  <div className="flex flex-col items-center mb-2">
-                    <div className="w-11 h-11 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900 shadow mb-1">
-                      <svg
-                        width="23"
-                        height="23"
-                        viewBox="0 0 32 32"
-                        fill="none"
-                      >
-                        <circle cx="16" cy="16" r="16" fill="#22c55e" />
-                        <text
-                          x="50%"
-                          y="57%"
-                          textAnchor="middle"
-                          fill="white"
-                          fontSize="13"
-                          fontWeight="bold"
-                          fontFamily="Arial, sans-serif"
-                          dy=".3em"
-                        >
-                          V
-                        </text>
-                      </svg>
-                    </div>
-                    <p className="text-xl font-bold text-foreground">
-                      Join VORKO
-                    </p>
-                  </div>
-                ),
-              },
-            }}
-          />
-        </div>
-        <p>
-          Joining as <b>{role}</b>
-        </p>
-      </div>
-    );
-  }
+    const checkRole = async () => {
+      const email = user?.primaryEmailAddress?.emailAddress;
+      if (!email) return;
+
+      const res = await fetch("/api/check-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role }),
+      });
+      const data = await res.json();
+      if (data.roleConflict) {
+        toast.error(
+          `You already signed up as ${data.existingRole}. Please sign in.`
+        );
+        router.push("/sign-in");
+      }
+    };
+
+    checkRole();
+  }, [role]);
+
   return (
     <div className="min-h-screen flex flex-col justify-center items-center">
-      <p>Redirecting to onboarding…</p>
+      <div className="mt-10">
+        <SignUp
+          path="/sign-up"
+          signInUrl="/sign-in"
+          fallbackRedirectUrl={`/onboarding?role=${role}`}
+          unsafeMetadata={{ role }} // optional now
+          appearance={{
+            elements: {
+              card: "pt-2",
+            },
+          }}
+        />
+      </div>
+      <p>
+        Joining as <b>{role}</b>
+      </p>
     </div>
   );
 }

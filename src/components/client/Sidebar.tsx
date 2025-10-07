@@ -56,7 +56,7 @@ export const Sidebar = () => {
 
   return (
     <aside
-      className={`flex flex-col transition-all duration-300 ${
+      className={`fixed top-16.5 left-0 h-screen flex flex-col transition-all duration-300 z-50 ${
         open ? "w-64" : "w-16"
       } ${
         theme === "light"
@@ -68,18 +68,19 @@ export const Sidebar = () => {
       <div className="flex justify-end p-4">
         <button
           onClick={() => setOpen(!open)}
-          className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition`}
+          className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition"
         >
           {open ? "⬅" : "➡"}
         </button>
       </div>
 
+      {/* Navigation Links */}
       <nav className="flex flex-col gap-2 mt-2">
         {links.map((link, i) => (
           <Link
             key={i}
             href={link.href}
-            className={`relative flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-blue-500 hover:text-white ${
+            className={`group relative flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-blue-500 hover:text-white ${
               !open ? "justify-center" : ""
             }`}
           >
@@ -92,7 +93,7 @@ export const Sidebar = () => {
             {/* Tooltip when collapsed */}
             {!open && (
               <span
-                className={`absolute left-full ml-2 px-2 py-1 rounded-md text-sm whitespace-nowrap
+                className={`absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md text-sm whitespace-nowrap
                   ${
                     theme === "light"
                       ? "bg-gray-700 text-white"

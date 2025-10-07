@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const email = email_addresses?.[0]?.email_address ?? "";
     const name = ((first_name || "") + " " + (last_name || "")).trim();
-    const role = unsafe_metadata?.role ?? public_metadata?.role ?? "CLIENT";
+    const role = unsafe_metadata?.role;
 
     // check by clerkId
     const existingUser = await prismaClient.user.findUnique({

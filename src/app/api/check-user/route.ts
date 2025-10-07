@@ -3,7 +3,7 @@ import { prismaClient } from "@/src/lib/service/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { email } = await req.json();
+  const { email, clerkId } = await req.json();
 
   const existing = await prismaClient.user.findUnique({
     where: { email },
@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
       exists: true,
       role: existing.role,
       onboardingComplete: existing.onboardingComplete,
+      sameClerkId: existing.clerkId === clerkId, // ✅ check if same or different user
     });
   }
 

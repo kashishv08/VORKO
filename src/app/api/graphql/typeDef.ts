@@ -13,7 +13,7 @@ export const typeDefs = gql`
   }
 
   type Mutation {
-    completeOnboarding(bio: String!, skills: [String!]): User!
+    completeOnboarding(bio: String!, skills: [String!], role: String): User!
     createProject(
       title: String!
       description: String!

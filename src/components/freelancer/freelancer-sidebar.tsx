@@ -16,76 +16,78 @@ export const Sidebar = () => {
 
   const links = [
     {
+      name: "Dashboard",
       href: "/freelancer/dashboard",
-      label: "Dashboard",
       icon: <HomeIcon className="w-6 h-6" />,
     },
     {
+      name: "Browse Projects",
       href: "/freelancer/project",
-      label: "Browse Projects",
       icon: <FolderIcon className="w-6 h-6" />,
     },
     {
+      name: "My Proposals",
       href: "/freelancer/proposal",
-      label: "My Proposals",
       icon: <DocumentTextIcon className="w-6 h-6" />,
     },
     {
+      name: "My Contracts",
       href: "/freelancer/contract",
-      label: "My Contracts",
       icon: <FolderIcon className="w-6 h-6" />,
     },
   ];
 
-  const bg = theme === "light" ? "bg-white" : "bg-gray-900";
-  const textPrimary = theme === "light" ? "text-gray-700" : "text-gray-200";
-
   return (
     <aside
-      className={`flex flex-col transition-all duration-300 ${
+      className={`fixed top-16.5 left-0 h-screen flex flex-col transition-all duration-300 z-50 ${
         open ? "w-64" : "w-16"
-      } ${bg} shadow-md`}
+      } ${
+        theme === "light"
+          ? "bg-white text-gray-700"
+          : "bg-gray-900 text-gray-200"
+      } shadow-md`}
     >
       {/* Toggle Button */}
       <div className="flex justify-end p-4">
         <button
           onClick={() => setOpen(!open)}
-          className={`p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition`}
+          className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition"
         >
           {open ? "⬅" : "➡"}
         </button>
       </div>
 
+      {/* Navigation Links */}
       <nav className="flex flex-col gap-2 mt-2">
-        {links.map((link) => {
+        {links.map((link, i) => {
           const isActive = pathname === link.href;
           return (
             <Link
-              key={link.href}
+              key={i}
               href={link.href}
-              className={`relative flex items-center gap-3 p-3 rounded-lg transition-colors 
-                ${
-                  isActive
-                    ? "bg-blue-500 text-white"
-                    : `${textPrimary} hover:bg-blue-500 hover:text-white`
-                }
-                ${!open ? "justify-center" : ""}`}
+              className={`group relative flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-blue-500 hover:text-white ${
+                !open ? "justify-center" : ""
+              }`}
+              style={{ backgroundColor: isActive ? "#3b82f6" : "transparent" }}
             >
+              {/* Icon */}
               <span className="flex-shrink-0">{link.icon}</span>
-              {open && <span className="font-medium">{link.label}</span>}
 
-              {/* Tooltip on hover when collapsed */}
+              {/* Label */}
+              {open && <span className="font-medium">{link.name}</span>}
+
+              {/* Tooltip when collapsed */}
               {!open && (
                 <span
-                  className={`absolute left-full ml-2 px-2 py-1 rounded-md text-sm whitespace-nowrap
-                  ${
-                    theme === "light"
-                      ? "bg-gray-700 text-white"
-                      : "bg-gray-200 text-gray-900"
-                  } 
-                  opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}
+                  className={`absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md text-sm whitespace-nowrap
+                    ${
+                      theme === "light"
+                        ? "bg-gray-700 text-white"
+                        : "bg-gray-200 text-gray-900"
+                    } 
+                    opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}
                 >
-                  {link.label}
+                  {link.name}
                 </span>
               )}
             </Link>
