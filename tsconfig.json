@@ -34,5 +34,31 @@
   "rules": {
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "error"
-  }
+  },
+  "theme": {
+    "extend": {
+      "colors": {
+        "background": "var(--background)",
+        "surface": "var(--surface)",
+        "surfaceGlass": "var(--surface-glass)",
+        "primary": "var(--primary)",
+        "secondary": "var(--secondary)",
+        "accent": "var(--accent)",
+        "highlight": "var(--highlight)",
+        "foreground": "var(--foreground)",
+        "muted": "var(--muted)",
+        "border": "var(--border)"
+      },
+      "boxShadow": {
+        "glow": "0 12px 28px var(--shadow)"
+      },
+      "borderRadius": {
+        "xl": "14px"
+      },
+      "transitionTimingFunction": {
+        "DEFAULT": "cubic-bezier(0.4, 0, 0.2, 1)"
+      }
+    }
+  },
+  "darkMode": "class"
 }

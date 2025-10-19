@@ -39,7 +39,12 @@ export async function POST(req: NextRequest) {
 
     const email = email_addresses?.[0]?.email_address ?? "";
     const name = ((first_name || "") + " " + (last_name || "")).trim();
-    const role = unsafe_metadata?.role;
+    const role = unsafe_metadata?.role ?? public_metadata?.role ?? null;
+
+    if (!role) {
+      console.warn("User created without role; skipping DB creation");
+      return NextResponse.json({ status: "skipped" });
+    }
 
     // check by clerkId
     const existingUser = await prismaClient.user.findUnique({
@@ -76,7 +81,7 @@ export async function POST(req: NextRequest) {
 
     // update Clerk public metadata
     if (public_metadata?.role !== role) {
-      await clerkClient.users.updateUserMetadata(clerkId, {
+      await clerkClient.users.updateUser(clerkId, {
         publicMetadata: { ...public_metadata, role },
       });
     }

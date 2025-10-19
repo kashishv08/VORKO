@@ -1,6 +1,8 @@
 "use client";
+
 import React from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { useTheme } from "@/src/components/context/ThemeContext";
 
@@ -8,74 +10,139 @@ export default function FreelancerDashboard() {
   const { user } = useUser();
   const { theme } = useTheme();
 
-  // Theme-based colors
-  const bg = theme === "light" ? "#f9fafb" : "#1f2937"; // page background
-  const cardBg = theme === "light" ? "#fff" : "#374151"; // card background
-  const textPrimary = theme === "light" ? "#111827" : "#f9fafb"; // main text
-  const textSecondary = theme === "light" ? "#6b7280" : "#d1d5db"; // gray text for dark mode
-  const btnBg = theme === "light" ? "#ebf8ff" : "#1e3a8a"; // button background
-  const btnText = theme === "light" ? "#3b82f6" : "#bfdbfe"; // button text
+  const fadeUp = {
+    hidden: { opacity: 0, y: 15 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.4, ease: "easeOut" },
+    },
+  };
+
+  const stats = [
+    { label: "Active Proposals", value: "3" },
+    { label: "Active Contracts", value: "2" },
+    { label: "This Month", value: "$450" },
+    { label: "Total Earnings", value: "$3,200" },
+  ];
+
+  const proposals = [
+    {
+      project: "UI Design System",
+      bid: "$500",
+      status: "Pending",
+      action: "View",
+    },
+    {
+      project: "E-commerce Website",
+      bid: "$1,200",
+      status: "Submitted",
+      action: "Edit",
+    },
+  ];
+
+  const messages = [
+    { name: "Vivaan", text: "Let’s finalize the logo today" },
+    { name: "Kashish", text: "Sure, pushing the code soon" },
+  ];
+
+  const meetings = [
+    {
+      title: "Kickoff Call with Vivaan",
+      time: "Tomorrow, 10:00 AM",
+      icon: "📹",
+    },
+  ];
 
   return (
-    <div className="flex min-h-screen" style={{ background: bg }}>
-      {/* Main Content */}
+    <div
+      className="flex min-h-screen"
+      style={{
+        background: "var(--background)",
+        color: "var(--foreground)",
+      }}
+    >
       <main className="flex-1 p-8">
-        {/* Topbar */}
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold" style={{ color: textPrimary }}>
-            Welcome back, {user?.fullName} 👋
-          </h2>
-        </div>
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex justify-between items-center mb-10"
+        >
+          <div>
+            <h2 className="text-3xl font-bold">
+              Welcome back, {user?.firstName || "Freelancer"} 👋
+            </h2>
+            <p className="text-sm text-[var(--muted)] mt-1">
+              Here’s what’s happening with your work.
+            </p>
+          </div>
+        </motion.div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          {[
-            { label: "Active Proposals", value: "3" },
-            { label: "Active Contracts", value: "2" },
-            { label: "This Month", value: "$450" },
-            { label: "Total Earnings", value: "$3,200" },
-          ].map((stat, idx) => (
-            <div
-              key={idx}
-              className="rounded-xl shadow-sm p-6 text-center"
-              style={{ background: cardBg, color: textPrimary }}
+        {/* Stats Grid */}
+        <motion.div
+          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10"
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
+        >
+          {stats.map((stat, i) => (
+            <motion.div
+              key={i}
+              variants={fadeUp}
+              whileHover={{
+                y: -8,
+                boxShadow: "0 12px 30px rgba(31,125,83,0.15)",
+              }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="rounded-xl p-6 text-center transform-gpu"
+              style={{
+                background:
+                  theme === "light"
+                    ? "linear-gradient(180deg, var(--surface), rgba(255,255,255,0.9))"
+                    : "linear-gradient(180deg, var(--surface), rgba(31,31,31,0.8))",
+                border: "1px solid rgba(255,255,255,0.06)",
+                backdropFilter: "blur(10px)",
+              }}
             >
-              <p className="text-2xl font-bold">{stat.value}</p>
-              <p style={{ color: textSecondary }}>{stat.label}</p>
-            </div>
+              <p className="text-3xl font-semibold text-[var(--primary)]">
+                {stat.value}
+              </p>
+              <p className="text-sm mt-1 text-[var(--muted)]">{stat.label}</p>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        {/* Content Grid */}
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Active Proposals */}
-          <div
-            className="lg:col-span-2 rounded-xl shadow-sm p-6"
-            style={{ background: cardBg, color: textPrimary }}
+          <motion.section
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="lg:col-span-2 rounded-xl p-6"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              backdropFilter: "blur(10px)",
+            }}
           >
             <div className="flex justify-between items-center mb-4">
-              <h3
-                className="text-lg font-semibold"
-                style={{ color: textPrimary }}
-              >
-                Active Proposals
-              </h3>
+              <h3 className="text-lg font-semibold">Active Proposals</h3>
               <Link
                 href="/freelancer/proposals"
-                className="text-blue-600 text-sm hover:underline"
+                className="text-[var(--primary)] text-sm hover:underline"
               >
                 View All
               </Link>
             </div>
-            <table className="w-full text-left">
+
+            <table className="w-full text-left text-sm">
               <thead>
-                <tr>
-                  {["Project", "Bid", "Status", "Actions"].map((head) => (
-                    <th
-                      key={head}
-                      className="pb-2"
-                      style={{ color: textSecondary }}
-                    >
+                <tr className="text-[var(--muted)] text-xs uppercase tracking-wider">
+                  {["Project", "Bid", "Status", "Action"].map((head) => (
+                    <th key={head} className="pb-3">
                       {head}
                     </th>
                   ))}
@@ -83,153 +150,139 @@ export default function FreelancerDashboard() {
               </thead>
               <tbody
                 className="divide-y"
-                style={{
-                  borderColor: theme === "light" ? "#e5e7eb" : "#4b5563",
-                }}
+                style={{ borderColor: "rgba(255,255,255,0.06)" }}
               >
-                {[
-                  {
-                    project: "UI Design System",
-                    bid: "$500",
-                    status: "Pending",
-                    action: "View",
-                  },
-                  {
-                    project: "E-commerce Website",
-                    bid: "$1200",
-                    status: "Submitted",
-                    action: "Edit",
-                  },
-                ].map((p, idx) => (
-                  <tr key={idx} className="text-sm">
-                    <td className="py-3" style={{ color: textPrimary }}>
-                      {p.project}
-                    </td>
-                    <td className="py-3" style={{ color: textPrimary }}>
-                      {p.bid}
-                    </td>
-                    <td className="py-3" style={{ color: textPrimary }}>
-                      {p.status}
-                    </td>
-                    <td className="py-3">
-                      <button
-                        className="px-3 py-1 rounded-md text-sm hover:bg-blue-500 transition"
-                        style={{ background: btnBg, color: btnText }}
+                {proposals.map((p, idx) => (
+                  <motion.tr
+                    key={idx}
+                    whileHover={{
+                      background: "rgba(31,125,83,0.06)",
+                    }}
+                    className="transition-colors"
+                  >
+                    <td className="py-4 font-medium">{p.project}</td>
+                    <td className="py-4">{p.bid}</td>
+                    <td className="py-4">{p.status}</td>
+                    <td className="py-4">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        className="px-3 py-1 rounded-md text-sm font-medium"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, var(--primary), var(--accent))",
+                          color: "#fff",
+                        }}
                       >
                         {p.action}
-                      </button>
+                      </motion.button>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </motion.section>
 
-          {/* Right Column */}
+          {/* Right Sidebar */}
           <div className="flex flex-col gap-6">
-            {/* Messages Preview */}
-            <div
-              className="rounded-xl shadow-sm p-6"
-              style={{ background: cardBg }}
+            {/* Messages */}
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              className="rounded-xl p-6"
+              style={{
+                background: "var(--surface)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                backdropFilter: "blur(10px)",
+              }}
             >
               <div className="flex justify-between items-center mb-4">
-                <h3
-                  className="text-lg font-semibold"
-                  style={{ color: textPrimary }}
-                >
-                  Messages
-                </h3>
+                <h3 className="text-lg font-semibold">Messages</h3>
                 <Link
                   href="/freelancer/messages"
-                  className="text-blue-600 text-sm hover:underline"
+                  className="text-[var(--primary)] text-sm hover:underline"
                 >
                   View All
                 </Link>
               </div>
+
               <div className="flex flex-col gap-4">
-                {[
-                  { name: "Vivaan", text: "Let’s finalize the logo today" },
-                  { name: "Kashish", text: "Sure, pushing the code soon" },
-                ].map((msg, i) => (
-                  <div key={i} className="flex items-center gap-3">
+                {messages.map((msg, i) => (
+                  <motion.div
+                    key={i}
+                    whileHover={{ x: 4 }}
+                    className="flex items-center gap-3"
+                  >
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      className="w-8 h-8 rounded-full flex items-center justify-center font-medium"
                       style={{
-                        background: theme === "light" ? "#dbeafe" : "#1e40af",
-                        color: theme === "light" ? "#1e40af" : "#bfdbfe",
+                        background: "rgba(31,125,83,0.15)",
+                        color: "var(--primary)",
                       }}
                     >
                       {msg.name[0]}
                     </div>
                     <div>
-                      <p
-                        className="font-medium text-sm"
-                        style={{ color: textPrimary }}
-                      >
-                        {msg.name}
-                      </p>
-                      <p className="text-xs" style={{ color: textSecondary }}>
-                        {msg.text}
-                      </p>
+                      <p className="font-medium text-sm">{msg.name}</p>
+                      <p className="text-xs text-[var(--muted)]">{msg.text}</p>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
-            {/* Meetings Preview */}
-            <div
-              className="rounded-xl shadow-sm p-6"
-              style={{ background: cardBg }}
+            {/* Meetings */}
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              className="rounded-xl p-6 flex flex-col gap-4"
+              style={{
+                background: "var(--surface)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                backdropFilter: "blur(10px)",
+              }}
             >
-              <div className="flex justify-between items-center mb-4">
-                <h3
-                  className="text-lg font-semibold"
-                  style={{ color: textPrimary }}
-                >
-                  Meetings
-                </h3>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-lg font-semibold">Meetings</h3>
                 <Link
                   href="/freelancer/meetings"
-                  className="text-blue-600 text-sm hover:underline"
+                  className="text-[var(--primary)] text-sm hover:underline"
                 >
                   View All
                 </Link>
               </div>
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-3">
+
+              {meetings.map((m, i) => (
+                <div key={i} className="flex items-center gap-3">
                   <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center"
                     style={{
-                      background: theme === "light" ? "#dbeafe" : "#1e40af",
-                      color: theme === "light" ? "#1e40af" : "#bfdbfe",
+                      background: "var(--accent)",
+                      color: "#fff",
                     }}
                   >
-                    📹
+                    {m.icon}
                   </div>
                   <div>
-                    <p
-                      className="font-medium text-sm"
-                      style={{ color: textPrimary }}
-                    >
-                      Kickoff Call with Vivaan
-                    </p>
-                    <p className="text-xs" style={{ color: textSecondary }}>
-                      Tomorrow, 10:00 AM
-                    </p>
+                    <p className="font-medium text-sm">{m.title}</p>
+                    <p className="text-xs text-[var(--muted)]">{m.time}</p>
                   </div>
                 </div>
-                <button
-                  className="w-full py-2 rounded-lg hover:bg-blue-700 transition"
-                  style={{
-                    background: theme === "light" ? "#2563eb" : "#1e40af",
-                    color: "#fff",
-                  }}
-                >
-                  Join Meeting
-                </button>
-              </div>
-            </div>
+              ))}
+
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                className="w-full py-2 rounded-lg font-medium shadow-md"
+                style={{
+                  background:
+                    "linear-gradient(90deg, var(--primary), var(--accent))",
+                  color: "#fff",
+                }}
+              >
+                Join Meeting
+              </motion.button>
+            </motion.div>
           </div>
         </div>
       </main>

@@ -11,7 +11,7 @@ export default function RootLayout({
       <Sidebar />
 
       {/* Main content */}
-      <main className={`flex-1 ml-16 h-screen overflow-auto`}>{children}</main>
+      <main className={`flex-1 ml-16 h-screen bg-background`}>{children}</main>
     </div>
   );
 }

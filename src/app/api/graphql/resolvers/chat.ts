@@ -1,14 +1,21 @@
 // resolvers/chat.ts
-import { getCurrentUserFromDB } from "@/src/lib/helper";
 import { prismaClient } from "@/src/lib/service/prisma";
+import { auth } from "@clerk/nextjs/server";
 import { StreamChat } from "stream-chat";
+
+async function getCurrentUserFromDB() {
+  const { userId } = await auth();
+  // console.log("gql wala userid", userId);
+  if (!userId) return null;
+  return await prismaClient.user.findUnique({ where: { clerkId: userId } });
+}
 
 export const generateChatToken = async (
   _: unknown,
   args: { contractId: string }
 ) => {
-  const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY;
-  const apiSecret = process.env.STREAM_API_SECRET;
+  const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY!;
+  const apiSecret = process.env.STREAM_API_SECRET!;
 
   if (!apiKey || !apiSecret) {
     throw new Error("Stream API key or secret is missing.");
@@ -40,7 +47,7 @@ export const getUserChats = async () => {
   const user = await getCurrentUserFromDB();
   if (!user) throw new Error("Not authenticated");
 
-  console.log(user);
+  // console.log(user);
 
   // Fetch contracts where the user is either client or freelancer
   const contracts = await prismaClient.contract.findMany({

@@ -1,5 +1,9 @@
 import gql from "graphql-tag";
 
+// deliverWork(contractId: String!, submissionLink: String!): Contract!
+// approveWork(contractId: String!): Contract!
+// requestRevision(contractId: String!, feedback: String!): Contract!
+
 export const typeDefs = gql`
   type Query {
     clientAllPostedProjects(id: String!): [Project]!
@@ -10,10 +14,12 @@ export const typeDefs = gql`
     getClientActiveContracts: [Contract]!
     contractById(contractId: String!): Contract
     getUserChats: [UserChat!]!
+    getFreelancerActiveContracts: [Contract]!
+    clientDashboard: ClientDashboard!
   }
 
   type Mutation {
-    completeOnboarding(bio: String!, skills: [String!], role: String): User!
+    completeOnboarding(bio: String!, skills: [String!], role: String!): User!
     createProject(
       title: String!
       description: String!
@@ -28,6 +34,12 @@ export const typeDefs = gql`
     acceptProposal(proposalId: String!): Proposal!
     rejectProposal(proposalId: String!): Proposal!
     generateChatToken(contractId: String!): ChatToken!
+  }
+
+  type ClientDashboard {
+    activeProjects: [Project!]!
+    activeContractsCount: Int!
+    proposalsPendingCount: Int!
   }
 
   type UserChat {
@@ -81,6 +93,8 @@ export const typeDefs = gql`
     ACTIVE
     COMPLETED
     CANCELLED
+    REVIEW_PENDING
+    REVISION_REQUESTED
   }
 
   type Contract {

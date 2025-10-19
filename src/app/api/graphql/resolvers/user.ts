@@ -9,42 +9,41 @@ export const completeOnboarding = async (
   const user = await currentUser();
   if (!user) throw new Error("User not authenticated.");
 
+  // console.log(user);
+
   const email =
-    user.primaryEmailAddress?.emailAddress ||
+    user.primaryEmailAddress?.emailAddress ??
     user.emailAddresses?.[0]?.emailAddress;
   if (!email) throw new Error("User email not found.");
 
-  // check for existing user in DB by clerkId
   let dbUser = await prismaClient.user.findUnique({
     where: { clerkId: user.id },
   });
-
   if (!dbUser) {
-    // This might happen if webhook didn't create it
     dbUser = await prismaClient.user.create({
       data: {
         clerkId: user.id,
         email,
-        name: user.firstName + " " + user.lastName,
+        name: `${user.firstName} ${user.lastName}`,
         role: args.role,
-        onboardingComplete: false, // will be updated below
+        onboardingComplete: false,
         password: "",
       },
     });
   }
 
-  // Update Clerk metadata
+  // ✅ Update Clerk metadata
   await clerkClient.users.updateUser(user.id, {
     publicMetadata: {
+      ...user.publicMetadata,
       onboardingComplete: true,
-      role: args.role,
       bio: args.bio,
       skills: args.skills || [],
     },
   });
 
-  // Update DB user
-  const updated = await prismaClient.user.update({
+  // ✅ Update database
+  return prismaClient.user.update({
     where: { clerkId: user.id },
     data: {
       onboardingComplete: true,
@@ -53,6 +52,4 @@ export const completeOnboarding = async (
       skills: args.skills || [],
     },
   });
-
-  return updated;
 };

@@ -1,4 +1,5 @@
 "use client";
+
 import { COMPLETE_ONBOARD } from "@/src/lib/gql/mutation";
 import { gqlClient } from "@/src/lib/service/gql";
 import { useUser } from "@clerk/nextjs";
@@ -14,39 +15,38 @@ export default function Onboarding() {
   const role = user?.publicMetadata?.role || queryRole;
 
   const router = useRouter();
-  console.log("onboard", role);
+  // console.log("onboard role:", role);
 
   const [bio, setBio] = useState("");
   const [skill, setSkill] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ bio?: string; skills?: string }>({});
+  const [loading, setLoading] = useState(false);
 
+  // Optional: set role after signup if not set
   useEffect(() => {
-    if (!isLoaded || !user) return;
+    if (!isLoaded || !user || !role) return;
 
-    const setRoleAndRedirect = async () => {
+    const setRole = async () => {
       try {
-        const res = await fetch("/api/set-role", {
+        const res = await fetch("/api/check-role", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ clerkId: user.id, role }),
         });
         const data = await res.json();
-        if (!data.success) {
-          toast.error("Unable to set role. Please try again.");
-          return;
-        }
+        if (!data.success) toast.error("Unable to set role. Please try again.");
       } catch (err) {
         console.error("Error setting role:", err);
         toast.error("Something went wrong. Please try again.");
       }
     };
 
-    setRoleAndRedirect();
+    setRole();
   }, [isLoaded, user, role]);
 
   const removeSkill = (remove: string) => {
-    setSkills((skills) => skills.filter((s) => s !== remove));
+    setSkills((prev) => prev.filter((s) => s !== remove));
   };
 
   const addSkill = () => {
@@ -64,12 +64,12 @@ export default function Onboarding() {
 
   const handleOnboard = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const newErrors: typeof errors = {};
+    if (!user || !role) return toast.error("User or role missing.");
 
+    const newErrors: typeof errors = {};
     if (!bio.trim()) newErrors.bio = "Bio cannot be empty";
     else if (/^\d+$/.test(bio.trim()))
       newErrors.bio = "Bio cannot contain only numbers";
-
     if (role === "FREELANCER" && skills.length === 0)
       newErrors.skills = "Please add at least one skill";
 
@@ -78,14 +78,7 @@ export default function Onboarding() {
       return;
     }
 
-    if (!user) {
-      toast.error("User not found. Please sign in again.");
-      return;
-    }
-    if (!role) {
-      toast.error("Missing role. Please restart signup.");
-      return;
-    }
+    setLoading(true);
 
     try {
       const userOnboard: { completeOnboarding: User } = await gqlClient.request(
@@ -95,17 +88,24 @@ export default function Onboarding() {
 
       if (userOnboard?.completeOnboarding) {
         toast.success("Onboarding completed! Redirecting...");
+
+        // Clear form state
         setBio("");
         setSkills([]);
-        setTimeout(() => {
-          router.push(`/${role?.toLowerCase()}/dashboard`);
-        }, 1000);
+
+        // Reload Clerk user to refresh publicMetadata
+        await user.reload();
+
+        // Redirect
+        router.push(`/${role.toLowerCase()}/dashboard`);
       } else {
         toast.error("Onboarding failed. Please try again.");
       }
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -133,6 +133,7 @@ export default function Onboarding() {
             }
             value={bio}
             onChange={(e) => setBio(e.target.value)}
+            disabled={loading}
           />
           {errors.bio && (
             <p className="text-red-500 text-sm mb-4">{errors.bio}</p>
@@ -148,11 +149,13 @@ export default function Onboarding() {
                   value={skill}
                   onChange={(e) => setSkill(e.target.value)}
                   onKeyDown={handleKeyDown}
+                  disabled={loading}
                 />
                 <button
                   type="button"
-                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={addSkill}
+                  disabled={loading}
                 >
                   Add
                 </button>
@@ -171,6 +174,7 @@ export default function Onboarding() {
                       type="button"
                       onClick={() => removeSkill(sk)}
                       className="ml-1 text-lg hover:text-red-500"
+                      disabled={loading}
                     >
                       ×
                     </button>
@@ -182,9 +186,10 @@ export default function Onboarding() {
 
           <button
             type="submit"
-            className="cursor-pointer bg-green-500 text-white rounded-lg px-8 py-3 mt-4 hover:bg-green-600"
+            disabled={loading}
+            className="cursor-pointer bg-green-500 text-white rounded-lg px-8 py-3 mt-4 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Complete Setup
+            {loading ? "Processing..." : "Complete Setup"}
           </button>
         </form>
       </div>

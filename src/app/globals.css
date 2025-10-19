@@ -2,611 +2,409 @@
 @import "@radix-ui/themes/styles.css";
 @import "tw-animate-css";
 @tailwind utilities;
+/* @import "stream-chat-react/dist/css/tailwind.css"; */
 
-@custom-variant dark (&:is(.dark *));
+/* ---------- Root variables ---------- */
+:root {
+  --background: #e6f1ed;
+  --surface: #c3d5cb; /* darker greenish */
+  --border: rgba(31, 125, 83, 0.2);
+  --surface-glass: rgba(255, 255, 255, 0.3);
+  --foreground: #0d2e1f;
+  --primary: #1f7d53;
+  --secondary: #23855c;
+  --accent: #2a4f3a;
+  --highlight: #2ea36f;
+  --muted: #6c9884;
+  --shadow: rgba(31, 125, 83, 0.2);
+}
 
-.background-network {
-  position: absolute;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 0;
-  background: transparent;
-  overflow: hidden;
+/* ---------- Light theme (updated palette) ---------- */
+.light {
+  --background: #f2f6f0; /* light, neutral background */
+  --surface: #e3e9de; /* light card background with green tint */
+  --surface-glass: rgba(255, 255, 255, 0.4); /* subtle frosted glass */
+
+  --foreground: #18230f; /* very dark green, strong text */
+  --muted: #27391c; /* muted text, medium dark green */
+
+  --primary: #1f7d53; /* medium green for buttons, active tabs */
+  --secondary: #255f38; /* darker green for gradients, accents */
+  --accent: #27391c; /* dark olive green */
+  --highlight: #38a16f; /* bright green highlight */
+
+  --border: rgba(31, 125, 83, 0.2);
+  --shadow: rgba(31, 125, 83, 0.2);
 }
-.background-network span {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.13;
-  animation: float 13s infinite ease-in-out;
+
+/* ---------- Dark theme ---------- */
+.dark {
+  --background: #0d1a10;
+  --surface: #1f2d20;
+  --surface-glass: rgba(255, 255, 255, 0.05);
+  --foreground: #e6f6ec;
+  --primary: #1f7d53;
+  --secondary: #2ea36f;
+  --accent: #255f38;
+  --highlight: #37c27e;
+  --muted: #9fcbb2;
+  --border: rgba(255, 255, 255, 0.06);
+  --shadow: rgba(46, 163, 111, 0.25);
 }
-.background-network .blue {
-  background: #5c7cfa;
-  width: 22px;
-  height: 22px;
-  left: 5vw;
-  top: 27vh;
+
+/* ---------- Base styles ---------- */
+html,
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 280ms ease, color 280ms ease,
+    border-color 280ms ease, box-shadow 280ms ease;
 }
-.background-network .violet {
-  background: #ae73ff;
-  width: 14px;
-  height: 14px;
-  right: 9vw;
-  top: 43vh;
+
+/* ---------- Glass utility ---------- */
+.bg-glass {
+  background: var(--surface-glass);
+  backdrop-filter: blur(8px);
 }
-.background-network .pink {
-  background: #67d3f6;
-  width: 18px;
-  height: 18px;
-  left: 60vw;
-  top: 67vh;
-}
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
+
+/* ---------- Hero gradient ---------- */
+@keyframes slow-pan {
+  0% {
+    background-position: 0% 50%;
   }
   50% {
-    transform: translateY(22px);
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 
-body.light {
-  --bg-gradient-from: #fafbff;
-  --bg-gradient-to: #e3ebff;
-  --text-primary: #23253a;
-  --text-secondary: #4f5875;
-  --card-bg: #fff;
-  --button-bg: #7387ff;
-  --button-hover-bg: #79feff;
+.hero-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--secondary),
+    var(--accent)
+  );
+  background-size: 200% 200%;
+  animation: slow-pan 12s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-body.dark {
-  --bg-gradient-from: #232760;
-  --bg-gradient-to: #131530;
-  --text-primary: #fcfcff;
-  --text-secondary: #a6bfff;
-  --card-bg: #131530;
-  --button-bg: #59f6fe;
-  --button-hover-bg: #232760;
+/* ---------- Buttons ---------- */
+.button-gradient {
+  background: linear-gradient(
+    90deg,
+    var(--primary),
+    var(--secondary),
+    var(--accent)
+  );
+  background-size: 200% 200%;
+  animation: slow-pan 10s linear infinite;
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px var(--highlight);
+  transition: all 0.25s ease;
 }
 
-:root {
-  --bg-gradient-from: #eaf7fc;
-  --bg-gradient-to: #e6ecfb;
-  --card-bg: rgba(255, 255, 255, 0.88);
-  --accent-gradient: linear-gradient(90deg, #49a6e9 15%, #7c57ff 68%);
-  --button-bg: linear-gradient(90deg, #49a6e9 56%, #7c57ff 80%);
-  --button-hover-bg: linear-gradient(90deg, #fff 30%, #49a6e9 99%);
-  --text-primary: #233d73;
-  --text-secondary: #485399;
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-[data-theme="dark"] {
-  --bg-gradient-from: #191e38;
-  --bg-gradient-to: #2e3245;
-  --card-bg: rgba(28, 33, 54, 0.91);
-  --accent-gradient: linear-gradient(90deg, #7c57ff 15%, #49a6e9 68%);
-  --button-bg: linear-gradient(90deg, #2762f0 52%, #7c57ff 80%);
-  --button-hover-bg: linear-gradient(90deg, #232c46 30%, #2762f0 99%);
-  --text-primary: #e7ecfd;
-  --text-secondary: #b7c1d3;
+.button-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px var(--highlight);
 }
 
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+/* Backgrounds */
+.bg-background {
+  background-color: var(--background);
+}
+.bg-surface {
+  background-color: var(--surface);
+}
+.bg-surfaceGlass {
+  background-color: var(--surface-glass);
+}
+.bg-primary {
+  background-color: var(--primary);
+}
+.bg-secondary {
+  background-color: var(--secondary);
+}
+.bg-accent {
+  background-color: var(--accent);
+}
+.bg-highlight {
+  background-color: var(--highlight);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/* Text colors */
+.text-foreground {
+  color: var(--foreground);
+}
+.text-muted {
+  color: var(--muted);
+}
+.text-primary {
+  color: var(--primary);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+/* Borders */
+.border {
+  border-color: var(--border);
 }
 
-/* LIGHT MODE */
-:root {
-  --button-outline: rgba(0, 0, 0, 0.1);
-  --badge-outline: rgba(0, 0, 0, 0.05);
-
-  /* Automatic computation of border around primary / danger buttons */
-  --opaque-button-border-intensity: -8; /* In terms of percentages */
-
-  /* Backgrounds applied on top of other backgrounds when hovered/active */
-  --elevate-1: rgba(0, 0, 0, 0.03);
-  --elevate-2: rgba(0, 0, 0, 0.08);
-
-  --background: 0 0% 100%;
-
-  --foreground: 0 0% 10%;
-
-  --border: 0 0% 90%;
-
-  --card: 0 0% 98%;
-
-  --card-foreground: 0 0% 10%;
-
-  --card-border: 0 0% 94%;
-
-  --sidebar: 0 0% 96%;
-
-  --sidebar-foreground: 0 0% 10%;
-
-  --sidebar-border: 0 0% 92%;
-
-  --sidebar-primary: 142 76% 36%;
-
-  --sidebar-primary-foreground: 142 76% 98%;
-
-  --sidebar-accent: 142 20% 92%;
-
-  --sidebar-accent-foreground: 142 76% 25%;
-
-  --sidebar-ring: 142 76% 36%;
-
-  --popover: 0 0% 95%;
-
-  --popover-foreground: 0 0% 10%;
-
-  --popover-border: 0 0% 88%;
-
-  --primary: 142 76% 36%;
-
-  --primary-foreground: 142 76% 98%;
-
-  --secondary: 0 0% 92%;
-
-  --secondary-foreground: 0 0% 10%;
-
-  --muted: 142 10% 94%;
-
-  --muted-foreground: 0 0% 45%;
-
-  --accent: 142 15% 93%;
-
-  --accent-foreground: 142 76% 28%;
-
-  --destructive: 0 84% 60%;
-
-  --destructive-foreground: 0 84% 98%;
-
-  --input: 0 0% 75%;
-  --ring: 142 76% 36%;
-  --chart-1: 142 76% 36%;
-  --chart-2: 38 92% 50%;
-  --chart-3: 210 70% 50%;
-  --chart-4: 270 60% 55%;
-  --chart-5: 20 80% 55%;
-
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
-  --radius: 0.5rem; /* 8px */
-  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
-  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.08);
-  --shadow-sm: 0px 2px 4px 0px hsl(0 0% 0% / 0.06),
-    0px 1px 2px -1px hsl(0 0% 0% / 0.06);
-  --shadow: 0px 4px 6px -1px hsl(0 0% 0% / 0.08),
-    0px 2px 4px -1px hsl(0 0% 0% / 0.06);
-  --shadow-md: 0px 6px 12px -2px hsl(0 0% 0% / 0.1),
-    0px 3px 6px -2px hsl(0 0% 0% / 0.08);
-  --shadow-lg: 0px 10px 20px -4px hsl(0 0% 0% / 0.12),
-    0px 4px 8px -2px hsl(0 0% 0% / 0.08);
-  --shadow-xl: 0px 20px 30px -6px hsl(0 0% 0% / 0.15),
-    0px 8px 12px -4px hsl(0 0% 0% / 0.1);
-  --shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.2);
-  --tracking-normal: 0em;
-  --spacing: 0.25rem;
-
-  /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
-
-  /* Fallback for older browsers */
-  --sidebar-primary-border: hsl(var(--sidebar-primary));
-  --sidebar-primary-border: hsl(
-    from hsl(var(--sidebar-primary)) h s
-      calc(l + var(--opaque-button-border-intensity)) / alpha
-  );
-
-  /* Fallback for older browsers */
-  --sidebar-accent-border: hsl(var(--sidebar-accent));
-  --sidebar-accent-border: hsl(
-    from hsl(var(--sidebar-accent)) h s
-      calc(l + var(--opaque-button-border-intensity)) / alpha
-  );
-
-  /* Fallback for older browsers */
-  --primary-border: hsl(var(--primary));
-  --primary-border: hsl(
-    from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) /
-      alpha
-  );
-
-  /* Fallback for older browsers */
-  --secondary-border: hsl(var(--secondary));
-  --secondary-border: hsl(
-    from hsl(var(--secondary)) h s
-      calc(l + var(--opaque-button-border-intensity)) / alpha
-  );
-
-  /* Fallback for older browsers */
-  --muted-border: hsl(var(--muted));
-  --muted-border: hsl(
-    from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) /
-      alpha
-  );
-
-  /* Fallback for older browsers */
-  --accent-border: hsl(var(--accent));
-  --accent-border: hsl(
-    from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) /
-      alpha
-  );
-
-  /* Fallback for older browsers */
-  --destructive-border: hsl(var(--destructive));
-  --destructive-border: hsl(
-    from hsl(var(--destructive)) h s
-      calc(l + var(--opaque-button-border-intensity)) / alpha
-  );
+/* Shadows */
+.shadow {
+  box-shadow: 0 4px 9px var(--shadow);
 }
 
-.dark {
-  --button-outline: rgba(255, 255, 255, 0.1);
-  --badge-outline: rgba(255, 255, 255, 0.05);
-
-  --opaque-button-border-intensity: 9; /* In terms of percentages */
-
-  /* Backgrounds applied on top of other backgrounds when hovered/active */
-  --elevate-1: rgba(255, 255, 255, 0.04);
-  --elevate-2: rgba(255, 255, 255, 0.09);
-
-  --background: 0 0% 7%;
-
-  --foreground: 0 0% 95%;
-
-  --border: 0 0% 20%;
-
-  --card: 0 0% 12%;
-
-  --card-foreground: 0 0% 95%;
-
-  --card-border: 0 0% 16%;
-
-  --sidebar: 0 0% 10%;
-
-  --sidebar-foreground: 0 0% 95%;
-
-  --sidebar-border: 0 0% 14%;
-
-  --sidebar-primary: 142 60% 55%;
-
-  --sidebar-primary-foreground: 142 60% 10%;
-
-  --sidebar-accent: 142 40% 15%;
-
-  --sidebar-accent-foreground: 142 60% 85%;
-
-  --sidebar-ring: 142 60% 55%;
-
-  --popover: 0 0% 14%;
-
-  --popover-foreground: 0 0% 95%;
-
-  --popover-border: 0 0% 18%;
-
-  --primary: 142 60% 55%;
-
-  --primary-foreground: 142 60% 10%;
-
-  --secondary: 0 0% 18%;
-
-  --secondary-foreground: 0 0% 95%;
-
-  --muted: 142 15% 16%;
-
-  --muted-foreground: 0 0% 60%;
-
-  --accent: 142 20% 17%;
-
-  --accent-foreground: 142 60% 80%;
-
-  --destructive: 0 84% 65%;
-
-  --destructive-foreground: 0 84% 10%;
-
-  --input: 0 0% 30%;
-  --ring: 142 60% 55%;
-  --chart-1: 142 60% 55%;
-  --chart-2: 38 92% 60%;
-  --chart-3: 210 70% 60%;
-  --chart-4: 270 60% 65%;
-  --chart-5: 20 80% 65%;
-
-  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.3);
-  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.35);
-  --shadow-sm: 0px 2px 4px 0px hsl(0 0% 0% / 0.4),
-    0px 1px 2px -1px hsl(0 0% 0% / 0.35);
-  --shadow: 0px 4px 6px -1px hsl(0 0% 0% / 0.45),
-    0px 2px 4px -1px hsl(0 0% 0% / 0.4);
-  --shadow-md: 0px 6px 12px -2px hsl(0 0% 0% / 0.5),
-    0px 3px 6px -2px hsl(0 0% 0% / 0.45);
-  --shadow-lg: 0px 10px 20px -4px hsl(0 0% 0% / 0.55),
-    0px 4px 8px -2px hsl(0 0% 0% / 0.5);
-  --shadow-xl: 0px 20px 30px -6px hsl(0 0% 0% / 0.6),
-    0px 8px 12px -4px hsl(0 0% 0% / 0.55);
-  --shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.7);
-
-  /* Fallback for older browsers */
-  --sidebar-primary-border: hsl(var(--sidebar-primary));
-  --sidebar-primary-border: hsl(
-    from hsl(var(--sidebar-primary)) h s
-      calc(l + var(--opaque-button-border-intensity)) / alpha
-  );
-
-  /* Fallback for older browsers */
-  --sidebar-accent-border: hsl(var(--sidebar-accent));
-  --sidebar-accent-border: hsl(
-    from hsl(var(--sidebar-accent)) h s
-      calc(l + var(--opaque-button-border-intensity)) / alpha
-  );
-
-  /* Fallback for older browsers */
-  --primary-border: hsl(var(--primary));
-  --primary-border: hsl(
-    from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) /
-      alpha
-  );
-
-  /* Fallback for older browsers */
-  --secondary-border: hsl(var(--secondary));
-  --secondary-border: hsl(
-    from hsl(var(--secondary)) h s
-      calc(l + var(--opaque-button-border-intensity)) / alpha
-  );
-
-  /* Fallback for older browsers */
-  --muted-border: hsl(var(--muted));
-  --muted-border: hsl(
-    from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) /
-      alpha
-  );
-
-  /* Fallback for older browsers */
-  --accent-border: hsl(var(--accent));
-  --accent-border: hsl(
-    from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) /
-      alpha
-  );
-
-  /* Fallback for older browsers */
-  --destructive-border: hsl(var(--destructive));
-  --destructive-border: hsl(
-    from hsl(var(--destructive)) h s
-      calc(l + var(--opaque-button-border-intensity)) / alpha
-  );
+.shadow-glow {
+  box-shadow: 0 2px 3px var(--highlight);
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
-  }
+/* Cards */
+.card {
+  background: var(--surface);
+  color: var(--foreground);
+  border-radius: 14px;
+  border: 1px solid rgba(39, 57, 28, 0.2); /* subtle olive border */
+  box-shadow: 0 8px 20px rgba(31, 125, 83, 0.12); /* soft green shadow */
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
-/**
- * Using the elevate system.
- * Automatic contrast adjustment.
- *
- * <element className="hover-elevate" />
- * <element className="active-elevate-2" />
- *
- * // Using the tailwind utility when a data attribute is "on"
- * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
- * // Or manually controlling the toggle state
- * <element className="toggle-elevate toggle-elevated" />
- *
- * Elevation systems have to handle many states.
- * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
- * - toggled or not
- * - focused or not (this is not handled with these utilities)
- *
- * Even without handling focused or not, this is six possible combinations that
- * need to be distinguished from eachother visually.
- */
-@layer utilities {
-  /* Hide ugly search cancel button in Chrome until we can style it properly */
-  input[type="search"]::-webkit-search-cancel-button {
-    @apply hidden;
-  }
+.card:hover {
+  box-shadow: 0 12px 48px rgba(56, 161, 111, 0.25); /* stronger highlight */
+  transform: translateY(-2px);
+}
 
-  /* Placeholder styling for contentEditable div */
-  [contenteditable][data-placeholder]:empty::before {
-    content: attr(data-placeholder);
-    color: hsl(var(--muted-foreground));
-    pointer-events: none;
-  }
+/* Tabs */
+.light .tabs-list {
+  background-color: #d7e3d5; /* slightly darker than surface for contrast */
+  border-radius: 16px;
+  box-shadow: 0 8px 16px rgba(31, 125, 83, 0.15);
+}
 
-  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
-   * buttons/badges can remove the automatic brightness adjustment on interactions
-   * and program their own. */
-  .no-default-hover-elevate {
-  }
+.tabs-trigger {
+  color: var(--muted);
+  font-weight: 600;
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
 
-  .no-default-active-elevate {
-  }
+.tabs-trigger[data-state="active"] {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 1px 13px var(--highlight);
+  border-radius: 16px;
+}
 
-  /**
-   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
-   * This way they can stack/compound. Both will overlap the parent's borders!
-   * So borders will be automatically adjusted both on toggle, and hover/active,
-   * and they will be compounded.
-   */
-  .toggle-elevate::before,
-  .toggle-elevate-2::before {
-    content: "";
-    pointer-events: none;
-    position: absolute;
-    inset: 0px;
-    /*border-radius: inherit;   match rounded corners */
-    border-radius: inherit;
-    z-index: -1;
-    /* sits behind content but above backdrop */
-  }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
-  .toggle-elevate.toggle-elevated::before {
-    background-color: var(--elevate-2);
-  }
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
 
-  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
-  .border.toggle-elevate::before {
-    inset: -1px;
-  }
+/* ------------------ Base container ------------------ */
+.str-chat {
+  background: var(--background);
+  color: var(--foreground);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  font-family: "Inter", sans-serif;
+}
 
-  /* Does not work on elements with overflow:hidden! */
-  .hover-elevate:not(.no-default-hover-elevate),
-  .active-elevate:not(.no-default-active-elevate),
-  .hover-elevate-2:not(.no-default-hover-elevate),
-  .active-elevate-2:not(.no-default-active-elevate) {
-    position: relative;
-    z-index: 0;
-  }
+/* ------------------ Channel list + window containers ------------------ */
+.str-chat .str-chat__list,
+.str-chat .str-chat__channel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
 
-  .hover-elevate:not(.no-default-hover-elevate)::after,
-  .active-elevate:not(.no-default-active-elevate)::after,
-  .hover-elevate-2:not(.no-default-hover-elevate)::after,
-  .active-elevate-2:not(.no-default-active-elevate)::after {
-    content: "";
-    pointer-events: none;
-    position: absolute;
-    inset: 0px;
-    /*border-radius: inherit;   match rounded corners */
-    border-radius: inherit;
-    z-index: 999;
-    /* sits in front of content */
-  }
+/* ------------------ Header ------------------ */
+.str-chat .str-chat__header {
+  background: linear-gradient(90deg, var(--surface), var(--surface-glass));
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(12px);
+}
 
-  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
-  .active-elevate:active:not(.no-default-active-elevate)::after {
-    background-color: var(--elevate-1);
-  }
+/* ------------------ Incoming message bubbles ------------------ */
+.str-chat .str-chat__message--incoming .str-chat__message-bubble {
+  background: linear-gradient(145deg, var(--surface), var(--surface-glass));
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: background 0.3s ease, transform 0.25s ease;
+}
 
-  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
-  .active-elevate-2:active:not(.no-default-active-elevate)::after {
-    background-color: var(--elevate-2);
-  }
+.str-chat .str-chat__message--incoming .str-chat__message-bubble:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(31, 125, 83, 0.15);
+}
 
-  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
-  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
-  .border.active-elevate:not(.no-active-interaction-elevate)::after,
-  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
-  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
-  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
-    inset: -1px;
-  }
+/* ------------------ Outgoing message bubbles ------------------ */
+.str-chat .str-chat__message--outgoing .str-chat__message-bubble {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(46, 163, 111, 0.25);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.str-chat .str-chat__message--outgoing .str-chat__message-bubble:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(46, 163, 111, 0.4);
+}
+
+/* ------------------ Message text ------------------ */
+.str-chat .str-chat__message-text-inner {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* ------------------ Author + timestamp ------------------ */
+.str-chat .str-chat__message-author {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.str-chat .str-chat__message-timestamp {
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* ------------------ Input area ------------------ */
+.str-chat .str-chat__message-input {
+  background: var(--surface-glass);
+  border-radius: 0;
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.08);
+  transition: border 0.3s ease, box-shadow 0.25s ease;
+}
+
+.str-chat .str-chat__message-input:focus-within {
+  border-color: var(--highlight);
+  box-shadow: inset 0 2px 8px rgba(31, 125, 83, 0.15);
+}
+
+/* ------------------ Input send button ------------------ */
+.str-chat .str-chat__message-input button {
+  background: linear-gradient(
+    90deg,
+    var(--primary),
+    var(--secondary),
+    var(--accent)
+  );
+  color: #fff;
+  padding: 0.45rem 0.9rem;
+  font-weight: 600;
+}
+
+.str-chat .str-chat__message-input button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(46, 163, 111, 0.35);
+}
+
+/* ------------------ Scrollbar ------------------ */
+.str-chat ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.str-chat ::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 8px;
+}
+
+/* ------------------ Focus ring for accessibility ------------------ */
+.str-chat button:focus {
+  outline: 2px solid var(--highlight);
+  outline-offset: 3px;
+}
+
+/* ------------------ File input container ------------------ */
+.str-chat__file-input-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-glass);
+  border: 1px solid var(--border);
+  padding: 0.4rem;
+}
+
+.str-chat__file-input-container:hover {
+  background: linear-gradient(90deg, var(--surface), var(--surface-glass));
+  border-color: var(--highlight);
+  box-shadow: 0 6px 16px rgba(31, 125, 83, 0.15);
+  transform: translateY(-1px);
+}
+
+.str-chat__file-input-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--accent);
+  transition: all 0.25s ease;
+}
+
+.str-chat__file-input-button:hover {
+  color: var(--highlight);
+  transform: scale(1.1);
+}
+
+.str-chat__message-input .str-chat__message-textarea-container {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+/* ------------------ Dark theme adjustments ------------------ */
+.dark .str-chat {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.dark .str-chat .str-chat__list,
+.dark .str-chat .str-chat__channel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.dark .str-chat .str-chat__message--incoming .str-chat__message-bubble {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--foreground);
+}
+
+.dark .str-chat__file-input-container {
+  background: rgba(8, 10, 8, 0.5);
+  border: 1px solid rgba(46, 163, 111, 0.4);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.dark .str-chat__file-input-container:hover {
+  background: rgba(46, 63, 46, 0.7);
+  border-color: var(--highlight);
+  box-shadow: 0 6px 16px rgba(46, 163, 111, 0.3);
+  transform: translateY(-1px);
+}
+
+.dark .str-chat__file-input-button {
+  color: var(--highlight);
+}
+
+.dark .str-chat__file-input-button:hover {
+  color: var(--accent);
+  transform: scale(1.1);
 }

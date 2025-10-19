@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCalendarAlt, FaDollarSign } from "react-icons/fa";
-import { contract } from "../page";
+import { contract } from "../../../client/contract/page";
 
 function UserAvatar({
   name,

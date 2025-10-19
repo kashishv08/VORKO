@@ -87,8 +87,11 @@ model Contract {
   freelancerId String @db.ObjectId
   freelancer   User   @relation("FreelancerContracts", fields: [freelancerId], references: [id], onDelete: Cascade)
 
-  status      ContractStatus @default(ACTIVE)
-  createdAt   DateTime       @default(now())
+  status         ContractStatus @default(ACTIVE)
+  workSubmitted  Boolean?       @default(false)
+  submissionLink String?
+
+  createdAt   DateTime  @default(now())
   completedAt DateTime?
   messages    Message[]
   reviews     Review[]
@@ -98,6 +101,8 @@ enum ContractStatus {
   ACTIVE
   COMPLETED
   CANCELLED
+  REVIEW_PENDING
+  REVISION_REQUESTED
 }
 
 model Message {

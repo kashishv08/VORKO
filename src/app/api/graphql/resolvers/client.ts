@@ -3,6 +3,11 @@ import { prismaClient } from "@/src/lib/service/prisma";
 import { getCurrentUserFromDB } from "@/src/lib/helper";
 import { StreamChat } from "stream-chat";
 
+// const streamClient = StreamChat.getInstance(
+//   process.env.NEXT_PUBLIC_STREAM_API_KEY!,
+//   process.env.STREAM_SECRET!
+// );
+
 export const createProject = async (
   _: unknown,
   args: {
@@ -13,7 +18,7 @@ export const createProject = async (
   }
 ) => {
   const user = await getCurrentUserFromDB();
-  console.log(user);
+  // console.log(user);
 
   if (!user || user.role !== "CLIENT") {
     return { data: "only client create the project" };
@@ -217,3 +222,78 @@ export async function cancelContract(_: unknown, args: { contractId: string }) {
     },
   });
 }
+
+// export const approveWork = async (_: unknown, args: { contractId: string }) => {
+//   const contract = await prismaClient.contract.update({
+//     where: { id: args.contractId },
+//     data: {
+//       status: "COMPLETED",
+//       completedAt: new Date(),
+//     },
+//     include: { client: true, freelancer: true },
+//   });
+
+//   const channel = streamClient.channel("messaging", args.contractId);
+//   await channel.sendMessage({
+//     text: "Client approved the project. Contract marked as completed.",
+//     user_id: contract.client.id,
+//     type: "system",
+//   });
+
+//   return contract;
+// };
+
+// export const requestRevision = async (
+//   _: unknown,
+//   args: { contractId: string; feedback: string }
+// ) => {
+//   const contract = await prismaClient.contract.update({
+//     where: { id: args.contractId },
+//     data: {
+//       status: "REVISION_REQUESTED",
+//     },
+//     include: { client: true, freelancer: true },
+//   });
+
+//   const channel = streamClient.channel("messaging", args.contractId);
+//   await channel.sendMessage({
+//     text: `Client requested revisions:\n"${args.feedback}"`,
+//     user_id: contract.client.id,
+//     type: "system",
+//   });
+
+//   return contract;
+// };
+
+export const clientDashboard = async () => {
+  const user = await getCurrentUserFromDB();
+  // console.log(user);
+  if (!user) throw new Error("Unauthorized");
+
+  const proposalsPendingCount = await prismaClient.proposal.count({
+    where: {
+      project: { clientId: user.id },
+      status: "SUBMITTED",
+    },
+  });
+
+  const activeContractsCount = await prismaClient.contract.count({
+    where: {
+      clientId: user.id,
+      status: "ACTIVE",
+    },
+  });
+
+  const activeProjects = await prismaClient.project.findMany({
+    where: { clientId: user.id },
+    include: { proposals: true, contract: true },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  return {
+    activeProjects,
+    activeContractsCount,
+    proposalsPendingCount,
+  };
+};

@@ -1,13 +1,17 @@
 "use client";
+
 import { CREATE_PROPOSAL } from "@/src/lib/gql/mutation";
 import { GET_ONE_PROJECT } from "@/src/lib/gql/queries";
 import { gqlClient } from "@/src/lib/service/gql";
 import { Project, User } from "@prisma/client";
-import { BookmarkIcon, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/src/components/context/ThemeContext";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
+import { PencilIcon } from "lucide-react";
+import { Spinner } from "@radix-ui/themes";
 
 type ProjWithClient = Project & { client: User };
 
@@ -16,13 +20,12 @@ export default function ProjectDetailPage() {
   const id = params.id;
   const { theme } = useTheme();
 
+  const [project, setProject] = useState<ProjWithClient>();
+  const [proposalStatus, setProposalStatus] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bidAmount, setBidAmount] = useState("");
   const [proposalMessage, setProposalMessage] = useState("");
-  const [proposalStatus, setProposalStatus] = useState("");
-  const [project, setProject] = useState<ProjWithClient>();
-
-  // validation state
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{
     bidAmount?: string;
     proposalMessage?: string;
@@ -30,30 +33,30 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     const fetchProj = async () => {
-      const proj: { getProjectById: ProjWithClient } = await gqlClient.request(
-        GET_ONE_PROJECT,
-        { id }
-      );
-      setProject(proj.getProjectById);
+      try {
+        const proj: { getProjectById: ProjWithClient } =
+          await gqlClient.request(GET_ONE_PROJECT, { id });
+        setProject(proj.getProjectById);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load project.");
+      }
     };
     fetchProj();
   }, [id]);
 
   const handleSubmitProposal = async () => {
     const newErrors: typeof errors = {};
-
-    if (!bidAmount || Number(bidAmount) <= 0) {
-      newErrors.bidAmount = "Please enter a valid bid amount";
-    }
-    if (!proposalMessage.trim()) {
+    if (!bidAmount || Number(bidAmount) <= 0)
+      newErrors.bidAmount = "Enter a valid bid amount";
+    if (!proposalMessage.trim())
       newErrors.proposalMessage = "Proposal message cannot be empty";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
+    if (Object.keys(newErrors).length) {
       setErrors(newErrors);
       return;
     }
 
+    setIsSubmitting(true);
     try {
       await gqlClient.request(CREATE_PROPOSAL, {
         amount: Number(bidAmount),
@@ -62,142 +65,221 @@ export default function ProjectDetailPage() {
       });
       setProposalStatus("SUBMITTED");
       setIsModalOpen(false);
-      alert("Proposal submitted!");
+      toast.success("Proposal submitted successfully!");
     } catch (err) {
       console.error(err);
-      alert("Error submitting proposal");
+      toast.error("Error submitting proposal. Try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const formatDate = (deadline?: number | null) => {
+    if (!deadline) return "-";
+    return new Date(Number(deadline)).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  if (!project) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Spinner size="3" />
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`min-h-screen p-6 transition-colors duration-300 ${
-        theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+      className={`min-h-screen py-10 px-6 md:px-12 ${
+        theme === "dark"
+          ? "bg-background text-foreground"
+          : "bg-background text-foreground"
       }`}
     >
-      {/* top bar */}
-      <div className="inline-flex w-full justify-between items-center p-5">
-        <h1 className="text-2xl font-bold">Project Description</h1>
-        <div className="flex">
-          <button className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-tl-md rounded-bl-md hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-            <BookmarkIcon className="w-5 h-5" />
-            Save
-          </button>
-          <button className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-tr-md rounded-br-md hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-            <MessageCircle className="w-5 h-5" />
-            Chat
-          </button>
+      {/* Header with Proposal Status + Submit/Edit button */}
+      <div className="flex justify-between items-center mb-10">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-3xl font-extrabold hero-gradient"
+        >
+          Project Details
+        </motion.h1>
+        <div className="flex items-center gap-4">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            className="py-2 px-4 rounded-xl button-gradient text-white font-semibold cursor-pointer shadow-glow flex items-center gap-2"
+            onClick={() => setIsModalOpen(true)}
+          >
+            {proposalStatus ? (
+              <>
+                <PencilIcon className="w-5 h-5" />
+                Proposal Submitted
+              </>
+            ) : (
+              "Submit Proposal"
+            )}
+          </motion.button>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto flex gap-6">
-        {/* Left Section */}
-        <div className="flex-1 space-y-6">
-          <div className="p-6 rounded-lg shadow-sm bg-white dark:bg-gray-800">
-            <h1 className="text-2xl font-bold mb-2">{project?.title}</h1>
-            <p className="mb-4 text-gray-700 dark:text-gray-300">
-              {project?.description}
-            </p>
-            <div className="flex gap-6 text-gray-600 dark:text-gray-400">
+      <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto">
+        {/* Left - Project Info */}
+        <motion.div layout className="flex-1 space-y-6">
+          <motion.div
+            whileHover={{
+              scale: 1.02,
+              boxShadow: "0 12px 28px var(--highlight)",
+            }}
+            className="card p-6"
+          >
+            <h2 className="text-2xl font-bold mb-4 text-primary">
+              {project?.title}
+            </h2>
+
+            <div className="space-y-4">
+              {/* Description */}
               <div>
-                <span className="font-semibold">Budget:</span> $
-                {project?.budget}
+                <h3 className="text-lg font-semibold mb-1 text-muted">
+                  Description
+                </h3>
+                <p className="text-foreground">{project?.description}</p>
               </div>
+
+              {/* Budget */}
               <div>
-                <span className="font-semibold">Deadline:</span>{" "}
-                {project?.deadline &&
-                  new Date(Number(project.deadline)).toLocaleDateString()}
+                <h3 className="text-lg font-semibold mb-1 text-muted">
+                  Budget
+                </h3>
+                <p className="text-foreground">${project?.budget}</p>
+              </div>
+
+              {/* Deadline */}
+              <div>
+                <h3 className="text-lg font-semibold mb-1 text-muted">
+                  Deadline
+                </h3>
+                <p className="text-foreground">
+                  {formatDate(Number(project?.deadline))}
+                </p>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        {/* Right Section */}
-        <div className="w-80 space-y-6">
-          <div className="p-6 rounded-lg shadow-sm text-center bg-white dark:bg-gray-800">
+        {/* Right - Client Card */}
+        <motion.div layout className="w-full lg:w-80 flex flex-col gap-6">
+          <motion.div
+            whileHover={{
+              scale: 1.03,
+              boxShadow: "0 12px 28px var(--highlight)",
+            }}
+            className="card p-6 text-center relative"
+          >
             <Image
-              height={100}
-              width={100}
               src={project?.client.avatar || "/image.png"}
               alt="client"
+              height={100}
+              width={100}
               className="w-20 h-20 rounded-full mx-auto mb-2"
             />
-            <h3 className="font-semibold">{project?.client.name}</h3>
-            <p className="text-yellow-500 inline-flex flex-col">
-              {project?.client.bio}
-            </p>
-          </div>
+            <h3 className="font-semibold text-primary">
+              {project?.client.name}
+            </h3>
+            <p className="text-muted text-sm mt-1">{project?.client.bio}</p>
 
-          {project?.status === "OPEN" && !proposalStatus && (
-            <div className="p-6 rounded-lg shadow-sm bg-white dark:bg-gray-800">
-              <button
-                className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+            {/* Submit Proposal button for OPEN projects (if not submitted) */}
+            {/* {project?.status === "OPEN" && !proposalStatus && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                className="mt-6 w-full py-2 rounded-xl button-gradient text-white font-semibold cursor-pointer"
                 onClick={() => {
                   setErrors({});
                   setIsModalOpen(true);
                 }}
               >
                 Submit Proposal
-              </button>
-            </div>
-          )}
-
-          {proposalStatus && (
-            <div className="p-6 rounded-lg shadow-sm text-center text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
-              Proposal Status:{" "}
-              <span className="font-semibold">{proposalStatus}</span>
-            </div>
-          )}
-        </div>
+              </motion.button>
+            )} */}
+          </motion.div>
+        </motion.div>
       </div>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 dark:bg-black/70 flex items-center justify-center">
-          <div className="p-6 rounded-lg w-96 bg-white dark:bg-gray-800 transition-colors">
-            <h2 className="text-xl font-semibold mb-4">Submit Proposal</h2>
+      {/* Proposal Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md p-6 rounded-xl shadow-lg bg-surface transition-colors"
+            >
+              <h2 className="text-xl font-semibold mb-4 text-primary">
+                {proposalStatus ? "Edit Proposal" : "Submit Proposal"}
+              </h2>
 
-            <label className="block mb-2 font-medium">Bid Amount</label>
-            <input
-              type="number"
-              className="w-full border p-2 rounded mb-1 bg-gray-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              value={bidAmount}
-              onChange={(e) => setBidAmount(e.target.value)}
-            />
-            {errors.bidAmount && (
-              <p className="text-red-500 text-sm mb-2">{errors.bidAmount}</p>
-            )}
+              <label className="block mb-2 font-medium text-muted">
+                Bid Amount
+              </label>
+              <input
+                type="number"
+                value={bidAmount}
+                onChange={(e) => setBidAmount(e.target.value)}
+                className="w-full p-2 mb-2 rounded border border-border bg-surface text-foreground"
+              />
+              {errors.bidAmount && (
+                <p className="text-red-500 text-sm mb-2">{errors.bidAmount}</p>
+              )}
 
-            <label className="block mb-2 font-medium">Proposal Message</label>
-            <textarea
-              className="w-full border p-2 rounded mb-1 bg-gray-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              rows={4}
-              value={proposalMessage}
-              onChange={(e) => setProposalMessage(e.target.value)}
-            ></textarea>
-            {errors.proposalMessage && (
-              <p className="text-red-500 text-sm mb-2">
-                {errors.proposalMessage}
-              </p>
-            )}
+              <label className="block mb-2 font-medium text-muted">
+                Proposal Message
+              </label>
+              <textarea
+                rows={4}
+                value={proposalMessage}
+                onChange={(e) => setProposalMessage(e.target.value)}
+                placeholder="Describe your timeline and approach..."
+                className="w-full p-2 mb-2 rounded border border-border bg-surface text-foreground"
+              />
+              {errors.proposalMessage && (
+                <p className="text-red-500 text-sm mb-2">
+                  {errors.proposalMessage}
+                </p>
+              )}
 
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                className="px-4 py-2 border rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:border-gray-600"
-                onClick={() => setIsModalOpen(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                onClick={handleSubmitProposal}
-              >
-                Submit
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="cursor-pointer px-4 py-2 rounded border border-border hover:bg-surface-glass transition"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitProposal}
+                  disabled={isSubmitting}
+                  className="cursor-pointer px-4 py-2 rounded-xl button-gradient text-white font-semibold"
+                >
+                  {isSubmitting
+                    ? "Submitting..."
+                    : proposalStatus
+                    ? "Update"
+                    : "Submit"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,112 +1,156 @@
 "use client";
+
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/src/components/context/ThemeContext";
 import {
-  HomeIcon,
-  FolderIcon,
-  DocumentTextIcon,
-  ChatBubbleLeftRightIcon,
-  VideoCameraIcon,
-  StarIcon,
-  Cog6ToothIcon,
-} from "@heroicons/react/24/outline";
+  LayoutDashboard,
+  Folder,
+  MessageSquare,
+  Video,
+  Star,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 export const Sidebar = () => {
   const { theme } = useTheme();
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const links = [
     {
       name: "Dashboard",
       href: "/client/dashboard",
-      icon: <HomeIcon className="w-6 h-6" />,
+      icon: <LayoutDashboard className="w-5 h-5" />,
     },
     {
-      name: "All Projects",
+      name: "Projects",
       href: "/client/project",
-      icon: <FolderIcon className="w-6 h-6" />,
-    },
-    {
-      name: "Proposals",
-      href: "/client/proposals",
-      icon: <DocumentTextIcon className="w-6 h-6" />,
+      icon: <Folder className="w-5 h-5" />,
     },
     {
       name: "Messages",
-      href: "/chat",
-      icon: <ChatBubbleLeftRightIcon className="w-6 h-6" />,
+      href: "/client/chat",
+      icon: <MessageSquare className="w-5 h-5" />,
     },
     {
       name: "Meetings",
       href: "/meetings",
-      icon: <VideoCameraIcon className="w-6 h-6" />,
+      icon: <Video className="w-5 h-5" />,
     },
-    {
-      name: "Reviews",
-      href: "/reviews",
-      icon: <StarIcon className="w-6 h-6" />,
-    },
+    { name: "Reviews", href: "/reviews", icon: <Star className="w-5 h-5" /> },
     {
       name: "Settings",
       href: "/settings",
-      icon: <Cog6ToothIcon className="w-6 h-6" />,
+      icon: <Settings className="w-5 h-5" />,
     },
   ];
 
+  // Detect outside clicks to close the sidebar
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Determine current visible state (expanded if open or hovered)
+  const isExpanded = open || hovered;
+
   return (
-    <aside
-      className={`fixed top-16.5 left-0 h-screen flex flex-col transition-all duration-300 z-50 ${
-        open ? "w-64" : "w-16"
-      } ${
-        theme === "light"
-          ? "bg-white text-gray-700"
-          : "bg-gray-900 text-gray-200"
-      } shadow-md`}
+    <motion.aside
+      ref={sidebarRef}
+      initial={{ width: isExpanded ? 256 : 72 }}
+      animate={{ width: isExpanded ? 256 : 72 }}
+      transition={{ duration: 0.35, ease: "easeInOut" }}
+      onMouseEnter={() => !open && setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="fixed top-16 left-0 h-[calc(100vh-4rem)] z-50 flex flex-col border-r backdrop-blur-xl shadow-2xl transition-all"
+      style={{
+        background: "rgba(24,35,15,0.6)",
+        borderColor: "rgba(255,255,255,0.05)",
+      }}
     >
-      {/* Toggle Button */}
-      <div className="flex justify-end p-4">
-        <button
-          onClick={() => setOpen(!open)}
-          className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-        >
-          {open ? "⬅" : "➡"}
-        </button>
-      </div>
-
       {/* Navigation Links */}
-      <nav className="flex flex-col gap-2 mt-2">
+      <nav className="flex flex-col gap-1 mt-2 px-2">
         {links.map((link, i) => (
-          <Link
+          <motion.div
             key={i}
-            href={link.href}
-            className={`group relative flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-blue-500 hover:text-white ${
-              !open ? "justify-center" : ""
-            }`}
+            whileHover={{
+              scale: 1.03,
+              backgroundColor: "rgba(31,125,83,0.25)",
+              boxShadow: "0 8px 24px rgba(31,125,83,0.25)",
+            }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="relative rounded-xl overflow-hidden"
           >
-            {/* Icon */}
-            <span className="flex-shrink-0">{link.icon}</span>
-
-            {/* Label */}
-            {open && <span className="font-medium">{link.name}</span>}
-
-            {/* Tooltip when collapsed */}
-            {!open && (
-              <span
-                className={`absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md text-sm whitespace-nowrap
-                  ${
-                    theme === "light"
-                      ? "bg-gray-700 text-white"
-                      : "bg-gray-200 text-gray-900"
-                  } 
-                  opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}
+            <Link
+              href={link.href}
+              className="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all"
+              style={{
+                color: "var(--foreground)",
+              }}
+            >
+              <motion.span
+                whileHover={{ rotate: 10 }}
+                transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                className="flex-shrink-0"
               >
-                {link.name}
-              </span>
-            )}
-          </Link>
+                {link.icon}
+              </motion.span>
+
+              {/* Label */}
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.span
+                    key="label"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="font-medium tracking-wide"
+                  >
+                    {link.name}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+
+              {/* Tooltip (when collapsed) */}
+              {!isExpanded && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                  className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md text-sm whitespace-nowrap bg-[rgba(37,95,56,0.9)] text-white shadow-lg backdrop-blur-sm pointer-events-none"
+                >
+                  {link.name}
+                </motion.span>
+              )}
+            </Link>
+          </motion.div>
         ))}
       </nav>
-    </aside>
+
+      {/* Glow footer line */}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-[1px]"
+        animate={{
+          background: [
+            "linear-gradient(90deg, rgba(31,125,83,0), rgba(31,125,83,0.6), rgba(31,125,83,0))",
+            "linear-gradient(90deg, rgba(37,95,56,0), rgba(37,95,56,0.6), rgba(37,95,56,0))",
+          ],
+        }}
+        transition={{ duration: 3, repeat: Infinity, repeatType: "mirror" }}
+      />
+    </motion.aside>
   );
 };

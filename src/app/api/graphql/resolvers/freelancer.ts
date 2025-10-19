@@ -1,10 +1,15 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { prismaClient } from "@/src/lib/service/prisma";
+import { StreamChat } from "stream-chat";
+// const streamClient = StreamChat.getInstance(
+//   process.env.NEXT_PUBLIC_STREAM_API_KEY!,
+//   process.env.STREAM_SECRET!
+// );
 
 // Helper to fetch your app's user by current session Clerk ID
 async function getCurrentUserFromDB() {
   const { userId } = await auth();
-  console.log("gql wala userid", userId);
+  // console.log("gql wala userid", userId);
   if (!userId) return null;
   return await prismaClient.user.findUnique({ where: { clerkId: userId } });
 }
@@ -15,7 +20,7 @@ export const allClientsProject = async () => {
       client: true,
     },
   });
-  console.log(proj);
+  // console.log(proj);
   if (proj) {
     return proj;
   } else {
@@ -65,3 +70,57 @@ export const submitProposal = async (
 
   return proposal;
 };
+
+export const getFreelancerActiveContracts = async () => {
+  const user = await currentUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const dbUser = await prismaClient.user.findUnique({
+    where: { clerkId: user.id },
+  });
+
+  // console.log(dbUser);
+
+  if (!dbUser) {
+    throw new Error("User not found in database");
+  }
+
+  const contracts = await prismaClient.contract.findMany({
+    where: {
+      status: "ACTIVE",
+      freelancerId: dbUser.id,
+    },
+    include: {
+      project: true,
+      client: true,
+      freelancer: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return contracts;
+};
+
+// export const deliverWork = async (
+//   _: unknown,
+//   args: { contractId: string; submissionLink: string }
+// ) => {
+//   const contract = await prismaClient.contract.update({
+//     where: { id: args.contractId },
+//     data: {
+//       status: "REVIEW_PENDING",
+//       workSubmitted: true,
+//       submissionLink: args.submissionLink,
+//     },
+//     include: { client: true, freelancer: true },
+//   });
+
+//   const channel = streamClient.channel("messaging", args.contractId);
+//   await channel.sendMessage({
+//     text: `Freelancer delivered the project for review.\n[View Submission](${args.submissionLink})`,
+//     user_id: contract.freelancer.id,
+//     type: "system",
+//   });
+
+//   return contract;
+// };

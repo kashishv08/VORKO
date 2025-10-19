@@ -1,21 +1,26 @@
 import { ApolloServer } from "@apollo/server";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { NextRequest } from "next/server";
-import { typeDefs } from "./typeDef";
-import {
-  createProject,
-  clientAllPostedProjects,
-  getProjectById,
-  acceptProposal,
-  rejectProposal,
-  allProposals,
-  getClientActiveContracts,
-  viewProposal,
-  contractById,
-} from "./resolvers/client";
-import { allClientsProject, submitProposal } from "./resolvers/freelancer";
-import { completeOnboarding } from "./resolvers/user";
 import { generateChatToken, getUserChats } from "./resolvers/chat";
+import {
+  acceptProposal,
+  allProposals,
+  clientAllPostedProjects,
+  clientDashboard,
+  contractById,
+  createProject,
+  getClientActiveContracts,
+  getProjectById,
+  rejectProposal,
+  viewProposal,
+} from "./resolvers/client";
+import {
+  allClientsProject,
+  getFreelancerActiveContracts,
+  submitProposal,
+} from "./resolvers/freelancer";
+import { completeOnboarding } from "./resolvers/user";
+import { typeDefs } from "./typeDef";
 
 const resolvers = {
   Query: {
@@ -27,6 +32,8 @@ const resolvers = {
     getClientActiveContracts,
     contractById,
     getUserChats,
+    getFreelancerActiveContracts,
+    clientDashboard,
   },
   Mutation: {
     completeOnboarding,
@@ -35,6 +42,9 @@ const resolvers = {
     acceptProposal,
     rejectProposal,
     generateChatToken,
+    // approveWork,
+    // deliverWork,
+    // requestRevision,
   },
 };
 

@@ -8,7 +8,7 @@ import { useUser } from "@clerk/nextjs";
 
 export default function Landing() {
   const { user } = useUser();
-  console.log(user);
+  // console.log(user);
   return (
     <div className="min-h-screen">
       {/* <Header /> */}

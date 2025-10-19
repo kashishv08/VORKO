@@ -3,26 +3,29 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { gqlClient } from "@/src/lib/service/gql";
+import { GET_FREELANCER_CONTRACT } from "@/src/lib/gql/queries";
+import { Contract, Project, Proposal, User } from "@prisma/client";
 import { Avatar, Spinner } from "@radix-ui/themes";
 import { FaCalendarAlt, FaDollarSign } from "react-icons/fa";
-import { ALL_CONTRACTS } from "@/src/lib/gql/queries";
-import { Contract, Project, Proposal, User } from "@prisma/client";
 
-export type contract = Contract & { project: Project } & {
+export type FreelancerContract = Contract & {
+  project: Project;
+  client: User;
   freelancer: User;
-} & { client: User } & { proposal: Proposal[] };
+  proposal: Proposal[];
+};
 
-export default function ClientContractsPage() {
-  const [contracts, setContracts] = useState<contract[]>([]);
+export default function FreelancerContractsPage() {
+  const [contracts, setContracts] = useState<FreelancerContract[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchContracts = async () => {
       setLoading(true);
       try {
-        const res: { getClientActiveContracts: contract[] } =
-          await gqlClient.request(ALL_CONTRACTS);
-        setContracts(res?.getClientActiveContracts || []);
+        const res: { getFreelancerActiveContracts: FreelancerContract[] } =
+          await gqlClient.request(GET_FREELANCER_CONTRACT);
+        setContracts(res?.getFreelancerActiveContracts || []);
       } catch (err) {
         console.error("Failed to load contracts", err);
       } finally {
@@ -44,18 +47,15 @@ export default function ClientContractsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
-        <Spinner size={"3"} />
+        <Spinner size="3" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen px-6 py-8 bg-background">
+    <div className="min-h-screen px-6 py-8 bg-background ">
+      <h5 className="mx-auto text-xl font-bold mb-4">All Contracts</h5>
       <div className="mx-auto max-w-5xl space-y-8">
-        {/* <h1 className="text-3xl font-bold text-foreground">
-          My Active Contracts
-        </h1> */}
-
         {contracts.length === 0 ? (
           <div className="card p-10 text-center">
             <p className="text-muted text-lg">
@@ -64,25 +64,25 @@ export default function ClientContractsPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {contracts.map((contract: contract) => (
+            {contracts.map((contract: FreelancerContract) => (
               <div
                 key={contract.id}
                 className="card flex flex-col sm:flex-row items-center sm:items-stretch justify-between gap-6 p-6"
               >
-                {/* Left: Freelancer */}
+                {/* Left: Client Info */}
                 <div className="flex items-center gap-5 flex-shrink-0">
                   <Avatar
-                    src={contract.freelancer.avatar || "/image.png"}
-                    alt={contract.freelancer.name}
-                    fallback={contract.freelancer.name.charAt(0).toUpperCase()}
+                    src={contract.client.avatar || "/image.png"}
+                    alt={contract.client.name}
+                    fallback={contract.client.name.charAt(0).toUpperCase()}
                     size="6"
                   />
                   <div>
                     <div className="text-sm text-muted font-semibold">
-                      Freelancer
+                      Client
                     </div>
                     <div className="text-lg font-semibold text-foreground">
-                      {contract.freelancer.name}
+                      {contract.client.name}
                     </div>
                   </div>
                 </div>
@@ -107,13 +107,13 @@ export default function ClientContractsPage() {
                 {/* Right: Actions */}
                 <div className="flex flex-col gap-4 mt-4 sm:mt-0">
                   <Link
-                    href={`/client/contract/${contract.id}`}
+                    href={`/freelancer/contract/${contract.id}`}
                     className="button-gradient text-white font-semibold py-3 px-6 rounded-lg text-center"
                   >
                     View Contract
                   </Link>
                   <Link
-                    href={`/client/messages/${contract.id}`}
+                    href={`/freelancer/messages/${contract.id}`}
                     className="inline-flex items-center gap-3 px-5 py-3 rounded-lg border border-border text-foreground bg-surface hover:bg-surface-glass transition-colors text-sm justify-center shadow"
                   >
                     Messages

@@ -1,8 +1,12 @@
-import gql from "graphql-tag";
+import { gql } from "graphql-request";
 
 export const COMPLETE_ONBOARD = gql`
-  mutation Mutation($bio: String!, $skills: [String!]) {
-    completeOnboarding(bio: $bio, skills: $skills) {
+  mutation CompleteOnboarding(
+    $bio: String!
+    $skills: [String!]!
+    $role: String!
+  ) {
+    completeOnboarding(bio: $bio, skills: $skills, role: $role) {
       id
       name
       email
@@ -106,6 +110,34 @@ export const GENERATE_TOKEN = gql`
   mutation GenerateChatToken($contractId: String!) {
     generateChatToken(contractId: $contractId) {
       token
+    }
+  }
+`;
+
+export const DELIVER_WORK = gql`
+  mutation DeliverWork($contractId: String!, $submissionLink: String!) {
+    deliverWork(contractId: $contractId, submissionLink: $submissionLink) {
+      id
+      status
+      submissionLink
+    }
+  }
+`;
+
+export const APPROVE_WORK = gql`
+  mutation ApproveWork($contractId: String!) {
+    approveWork(contractId: $contractId) {
+      id
+      status
+    }
+  }
+`;
+
+export const REQUEST_REVISION = gql`
+  mutation RequestRevision($contractId: String!, $feedback: String!) {
+    requestRevision(contractId: $contractId, feedback: $feedback) {
+      id
+      status
     }
   }
 `;

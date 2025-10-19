@@ -1,99 +1,178 @@
 "use client";
+
 import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { useTheme } from "@/src/components/context/ThemeContext";
 import {
-  HomeIcon,
-  FolderIcon,
-  DocumentTextIcon,
-} from "@heroicons/react/24/outline";
+  Home,
+  Folder,
+  MessageCircle,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 export const Sidebar = () => {
   const { theme } = useTheme();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const links = [
     {
       name: "Dashboard",
       href: "/freelancer/dashboard",
-      icon: <HomeIcon className="w-6 h-6" />,
+      icon: <Home className="w-5 h-5" />,
     },
     {
-      name: "Browse Projects",
+      name: "Projects",
       href: "/freelancer/project",
-      icon: <FolderIcon className="w-6 h-6" />,
+      icon: <Folder className="w-5 h-5" />,
     },
     {
-      name: "My Proposals",
-      href: "/freelancer/proposal",
-      icon: <DocumentTextIcon className="w-6 h-6" />,
+      name: "Inbox",
+      href: "/freelancer/chat",
+      icon: <MessageCircle className="w-5 h-5" />,
     },
     {
-      name: "My Contracts",
+      name: "Contracts",
       href: "/freelancer/contract",
-      icon: <FolderIcon className="w-6 h-6" />,
+      icon: <FileText className="w-5 h-5" />,
     },
   ];
 
-  return (
-    <aside
-      className={`fixed top-16.5 left-0 h-screen flex flex-col transition-all duration-300 z-50 ${
-        open ? "w-64" : "w-16"
-      } ${
-        theme === "light"
-          ? "bg-white text-gray-700"
-          : "bg-gray-900 text-gray-200"
-      } shadow-md`}
-    >
-      {/* Toggle Button */}
-      <div className="flex justify-end p-4">
-        <button
-          onClick={() => setOpen(!open)}
-          className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-        >
-          {open ? "⬅" : "➡"}
-        </button>
-      </div>
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        sidebarRef.current &&
+        !sidebarRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-      {/* Navigation Links */}
-      <nav className="flex flex-col gap-2 mt-2">
+  const isExpanded = open || hovered;
+
+  // THEME COLORS
+  const sidebarBg =
+    theme === "light" ? "rgba(255, 255, 255, 0.9)" : "rgba(18, 30, 20, 0.8)";
+  const sidebarBorder =
+    theme === "light" ? "rgba(31,125,83,0.25)" : "rgba(255,255,255,0.06)";
+  const hoverBg =
+    theme === "light" ? "rgba(31,125,83,0.12)" : "rgba(31,125,83,0.25)";
+  const hoverText = theme === "light" ? "var(--primary)" : "var(--highlight)";
+  const activeBg = "var(--primary)";
+  const activeText = "#fff";
+
+  return (
+    <motion.aside
+      ref={sidebarRef}
+      initial={{ width: isExpanded ? 256 : 72 }}
+      animate={{ width: isExpanded ? 256 : 72 }}
+      transition={{ duration: 0.35, ease: "easeInOut" }}
+      onMouseEnter={() => !open && setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="fixed top-16 left-0 h-[calc(100vh-4rem)] z-50 flex flex-col border-r shadow-glow backdrop-blur-xl transition-all"
+      style={{
+        background: sidebarBg,
+        borderColor: sidebarBorder,
+        color: "var(--foreground)",
+      }}
+    >
+      {/* Links */}
+      <nav className="flex flex-col gap-3 mt-3 px-2">
         {links.map((link, i) => {
           const isActive = pathname === link.href;
+
           return (
-            <Link
+            <motion.div
               key={i}
-              href={link.href}
-              className={`group relative flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-blue-500 hover:text-white ${
-                !open ? "justify-center" : ""
+              whileHover={{
+                scale: 1.03,
+                backgroundColor: isActive ? activeBg : hoverBg,
+                boxShadow:
+                  theme === "light"
+                    ? "0 8px 20px rgba(31,125,83,0.12)"
+                    : "0 8px 24px rgba(31,125,83,0.25)",
+              }}
+              transition={{ type: "spring", stiffness: 220, damping: 15 }}
+              className={`relative rounded-xl overflow-hidden ${
+                isActive ? "shadow-glow" : ""
               }`}
-              style={{ backgroundColor: isActive ? "#3b82f6" : "transparent" }}
+              style={{
+                backgroundColor: isActive ? activeBg : "transparent",
+              }}
             >
-              {/* Icon */}
-              <span className="flex-shrink-0">{link.icon}</span>
-
-              {/* Label */}
-              {open && <span className="font-medium">{link.name}</span>}
-
-              {/* Tooltip when collapsed */}
-              {!open && (
-                <span
-                  className={`absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md text-sm whitespace-nowrap
-                    ${
-                      theme === "light"
-                        ? "bg-gray-700 text-white"
-                        : "bg-gray-200 text-gray-900"
-                    } 
-                    opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}
+              <Link
+                href={link.href}
+                className="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200"
+              >
+                {/* Icon */}
+                <motion.span
+                  whileHover={{ rotate: 8 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                  className="flex-shrink-0"
+                  style={{
+                    color: isActive ? activeText : hoverText,
+                  }}
                 >
-                  {link.name}
-                </span>
-              )}
-            </Link>
+                  {link.icon}
+                </motion.span>
+
+                {/* Label */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.span
+                      key="label"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="font-medium tracking-wide"
+                      style={{
+                        color: isActive
+                          ? activeText // ✅ lock to white when active
+                          : "var(--foreground)",
+                      }}
+                    >
+                      {link.name}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+
+                {/* Tooltip when collapsed */}
+                {!isExpanded && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 rounded-md text-sm whitespace-nowrap bg-[rgba(37,95,56,0.9)] text-white shadow-lg backdrop-blur-sm pointer-events-none"
+                  >
+                    {link.name}
+                  </motion.span>
+                )}
+              </Link>
+            </motion.div>
           );
         })}
       </nav>
-    </aside>
+
+      {/* Animated bottom glow */}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-[1px]"
+        animate={{
+          background: [
+            "linear-gradient(90deg, rgba(31,125,83,0), rgba(31,125,83,0.6), rgba(31,125,83,0))",
+            "linear-gradient(90deg, rgba(37,95,56,0), rgba(37,95,56,0.6), rgba(37,95,56,0))",
+          ],
+        }}
+        transition={{ duration: 3, repeat: Infinity, repeatType: "mirror" }}
+      />
+    </motion.aside>
   );
 };

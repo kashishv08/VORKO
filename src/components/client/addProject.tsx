@@ -3,15 +3,10 @@
 import { useState, useRef } from "react";
 import { CREATE_PROJ } from "@/src/lib/gql/mutation";
 import { gqlClient } from "@/src/lib/service/gql";
-import {
-  Dialog,
-  Button,
-  Flex,
-  Text,
-  TextField,
-  Select,
-} from "@radix-ui/themes";
+import { Dialog, Button, Flex, Text, TextField } from "@radix-ui/themes";
 import { Project } from "@prisma/client";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 export default function AddProject({
   setAllProj,
@@ -27,7 +22,6 @@ export default function AddProject({
   const [status, setStatus] = useState("OPEN");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
   const closeDialogRef = useRef<HTMLButtonElement>(null);
 
   const validate = () => {
@@ -35,7 +29,7 @@ export default function AddProject({
     if (!title.trim()) newErrors.title = "Title is required";
     if (!description.trim()) newErrors.description = "Description is required";
     if (budget === "" || budget <= 0)
-      newErrors.budget = "Budget must be a positive number";
+      newErrors.budget = "Budget must be positive";
     if (!deadline) newErrors.deadline = "Deadline is required";
     else if (new Date(deadline) < new Date())
       newErrors.deadline = "Deadline must be in the future";
@@ -65,10 +59,9 @@ export default function AddProject({
         setActiveProject((prev) => [...prev, project]);
       setAllProj((prev) => [...prev, project]);
 
-      // ✅ Close dialog programmatically
+      toast.success("Project added successfully!");
       closeDialogRef.current?.click();
 
-      // Reset form
       setTitle("");
       setDescription("");
       setBudget("");
@@ -78,6 +71,7 @@ export default function AddProject({
     } catch (err) {
       console.error(err);
       setErrors({ submit: "Failed to create project" });
+      toast.error("Failed to add project.");
     } finally {
       setLoading(false);
     }
@@ -85,21 +79,41 @@ export default function AddProject({
 
   return (
     <Dialog.Root>
-      <Dialog.Trigger>
-        <Button style={{ backgroundColor: "green", cursor: "pointer" }}>
+      {/* Trigger Button */}
+      <Dialog.Trigger asChild>
+        <motion.button
+          whileHover={{
+            scale: 1.05,
+            boxShadow: "0 10px 25px rgba(31,125,83,0.3)",
+          }}
+          whileTap={{ scale: 0.95 }}
+          className="px-5 py-2 rounded-lg bg-[var(--primary)] text-[var(--background)] font-medium cursor-pointer shadow-md transition"
+        >
           + Post New Project
-        </Button>
+        </motion.button>
       </Dialog.Trigger>
 
-      <Dialog.Content maxWidth="500px">
-        <Dialog.Title>Add New Project</Dialog.Title>
-        <Dialog.Description size="2" mb="4">
+      {/* Dialog Content */}
+      <Dialog.Content
+        maxWidth="500px"
+        className="bg-[var(--surface)] dark:bg-[var(--surface)] rounded-xl p-6 shadow-xl"
+      >
+        <Dialog.Title className="text-xl font-bold text-[var(--foreground)] mb-2">
+          Add New Project
+        </Dialog.Title>
+        <Dialog.Description className="text-[var(--muted)] mb-5">
           Fill in the details below to create a new project.
         </Dialog.Description>
 
-        <Flex direction="column" gap="3">
+        <Flex direction="column" gap="4">
+          {/* Title */}
           <label>
-            <Text as="div" size="2" mb="1" weight="bold">
+            <Text
+              as="div"
+              size="2"
+              weight="bold"
+              className="text-[var(--foreground)] mb-1"
+            >
               Title
             </Text>
             <TextField.Root
@@ -107,6 +121,7 @@ export default function AddProject({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               aria-invalid={!!errors.title}
+              className="bg-[var(--glass)] border border-[var(--accent)] text-[var(--foreground)] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-text transition"
             />
             {errors.title && (
               <Text color="red" size="2">
@@ -115,8 +130,14 @@ export default function AddProject({
             )}
           </label>
 
+          {/* Description */}
           <label>
-            <Text as="div" size="2" mb="1" weight="bold">
+            <Text
+              as="div"
+              size="2"
+              weight="bold"
+              className="text-[var(--foreground)] mb-1"
+            >
               Description
             </Text>
             <TextField.Root
@@ -124,6 +145,7 @@ export default function AddProject({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               aria-invalid={!!errors.description}
+              className="bg-[var(--glass)] border border-[var(--accent)] text-[var(--foreground)] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-text transition"
             />
             {errors.description && (
               <Text color="red" size="2">
@@ -132,8 +154,14 @@ export default function AddProject({
             )}
           </label>
 
+          {/* Budget */}
           <label>
-            <Text as="div" size="2" mb="1" weight="bold">
+            <Text
+              as="div"
+              size="2"
+              weight="bold"
+              className="text-[var(--foreground)] mb-1"
+            >
               Budget ($)
             </Text>
             <TextField.Root
@@ -144,6 +172,7 @@ export default function AddProject({
                 setBudget(e.target.value === "" ? "" : Number(e.target.value))
               }
               aria-invalid={!!errors.budget}
+              className="bg-[var(--glass)] border border-[var(--accent)] text-[var(--foreground)] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-text transition"
             />
             {errors.budget && (
               <Text color="red" size="2">
@@ -152,8 +181,14 @@ export default function AddProject({
             )}
           </label>
 
+          {/* Deadline */}
           <label>
-            <Text as="div" size="2" mb="1" weight="bold">
+            <Text
+              as="div"
+              size="2"
+              weight="bold"
+              className="text-[var(--foreground)] mb-1"
+            >
               Deadline
             </Text>
             <TextField.Root
@@ -161,6 +196,7 @@ export default function AddProject({
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
               aria-invalid={!!errors.deadline}
+              className="bg-[var(--glass)] border border-[var(--accent)] text-[var(--foreground)] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-text transition"
             />
             {errors.deadline && (
               <Text color="red" size="2">
@@ -169,41 +205,36 @@ export default function AddProject({
             )}
           </label>
 
-          {/* <label>
-            <Text as="div" size="2" mb="1" weight="bold">
-              Status
-            </Text>
-            <Select.Root value={status} onValueChange={setStatus}>
-              <Select.Trigger>{status}</Select.Trigger>
-              <Select.Content>
-                <Select.Item value="OPEN">OPEN</Select.Item>
-                <Select.Item value="HIRED">HIRED</Select.Item>
-                <Select.Item value="CLOSED">CLOSED</Select.Item>
-              </Select.Content>
-            </Select.Root>
-          </label> */}
-
           {errors.submit && <Text color="red">{errors.submit}</Text>}
         </Flex>
 
-        <Flex gap="3" mt="4" justify="end">
-          <Dialog.Close>
-            <Button variant="soft" color="gray" className="cursor-pointer">
+        {/* Actions */}
+        <Flex gap="3" mt="6" justify="end">
+          <Dialog.Close asChild>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              className="px-4 py-2 rounded-lg bg-[var(--accent)] text-[var(--background)] cursor-pointer shadow-sm transition"
+            >
               Cancel
-            </Button>
+            </motion.button>
           </Dialog.Close>
 
           <Dialog.Close>
             <button ref={closeDialogRef} style={{ display: "none" }} />
           </Dialog.Close>
 
-          <Button
+          <motion.button
             onClick={handleAddProject}
+            whileHover={{
+              scale: 1.03,
+              boxShadow: "0 8px 20px rgba(31,125,83,0.3)",
+            }}
+            whileTap={{ scale: 0.97 }}
             disabled={loading}
-            style={{ backgroundColor: "green", cursor: "pointer" }}
+            className="px-5 py-2 rounded-lg bg-[var(--primary)] text-[var(--background)] font-medium cursor-pointer shadow-md transition"
           >
             {loading ? "Saving..." : "Save Project"}
-          </Button>
+          </motion.button>
         </Flex>
       </Dialog.Content>
     </Dialog.Root>

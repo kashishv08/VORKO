@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import Link from "next/link";
 import { UserButton, useUser } from "@clerk/nextjs";
-import { DotIcon } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 
 export type UserPublicMetadata = {
   role?: "FREELANCER" | "CLIENT";
@@ -16,18 +17,23 @@ export function Header() {
   const publicMetadata = (user?.publicMetadata as UserPublicMetadata) ?? {};
   const role = publicMetadata.role?.toLowerCase() ?? "";
 
+  const [logoHovered, setLogoHovered] = useState(false);
+
   return (
-    <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-background/75 shadow-md border-b border-border/80">
+    <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-[var(--background)]/80 shadow-md border-b border-[var(--border)] transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/">
           <span
-            className="text-2xl sm:text-2xl font-extrabold italic tracking-widest cursor-pointer 
-            text-lime-600 dark:text-lime-400 px-2 
-            hover:text-lime-500 focus-visible:ring-2 focus-visible:ring-lime-400 
-            transition-colors drop-shadow-[0_1px_10px_lime]"
+            className={`text-2xl sm:text-2xl font-extrabold italic tracking-widest cursor-pointer 
+            text-[var(--accent)] dark:text-[var(--accent-dark)]
+            px-2 transform transition-transform duration-500 ${
+              logoHovered ? "rotate-3 scale-110" : "rotate-0 scale-100"
+            }`}
+            onMouseEnter={() => setLogoHovered(true)}
+            onMouseLeave={() => setLogoHovered(false)}
             style={{
-              textShadow: "0 2px 10px #a3e63544",
+              textShadow: "0 2px 15px var(--accent)/40",
               letterSpacing: "0.16em",
             }}
           >
@@ -35,47 +41,42 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
-        {/* <nav className="hidden md:flex items-center gap-7 font-semibold text-gray-700 dark:text-gray-200">
-          <NavLink href="/#features">Features</NavLink>
-          <NavLink href="/#how-it-works">How It Works</NavLink>
-        </nav> */}
-
         {/* User Section */}
-        <div className="flex items-center gap-3 ml-4">
+        <div className="flex items-center gap-3 ml-4 cursor-poniter">
           <ThemeToggle />
+
           {isLoaded ? (
             isSignedIn && user ? (
-              <div className="pl-2">
-                <div className="rounded-[2rem] bg-white/20 dark:bg-black/30 shadow-lg py-1 px-2 flex items-center gap-2 border border-border/40 backdrop-blur-sm">
+              <div className="relative pl-2">
+                <div className="rounded-[2rem] bg-[var(--surface)]/30 dark:bg-[var(--surface-dark)]/30 shadow-lg py-1 px-2 flex items-center gap-2 border border-[var(--border)] backdrop-blur-sm transition-all duration-300 hover:scale-[1.03]">
                   <UserButton
                     appearance={{
                       elements: {
                         userButtonAvatarBox:
-                          "w-9 h-9 shadow focus:outline-lime-400",
+                          "w-9 h-9 shadow focus:outline-[var(--accent)]",
                       },
                     }}
                   >
                     <UserButton.MenuItems>
                       <UserButton.Link
                         label="Dashboard"
-                        labelIcon={<DotIcon />}
                         href={`/${role}/dashboard`}
+                        labelIcon={<LayoutDashboard />}
                       />
                     </UserButton.MenuItems>
                   </UserButton>
-                  <span className="hidden sm:inline text-gray-700 dark:text-gray-200 font-semibold text-sm ml-1">
+                  <span className="hidden sm:inline text-[var(--text-primary)] font-semibold text-sm ml-1 transition-colors">
                     {role.charAt(0).toUpperCase() + role.slice(1)}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="flex gap-1 sm:gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <Link href="/sign-in">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="cursor-pointer px-4 font-semibold"
+                    className="cursor-pointer px-4 font-semibold transition-transform duration-300 hover:scale-105 hover:text-[var(--accent)]"
                   >
                     Login
                   </Button>
@@ -83,7 +84,7 @@ export function Header() {
                 <Link href="/role-selection">
                   <Button
                     size="sm"
-                    className="cursor-pointer px-4 font-bold bg-gradient-to-r from-lime-500 to-lime-400 border-0 shadow"
+                    className="cursor-pointer px-4 font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] border-0 shadow-lg hover:scale-105 transition-transform duration-300"
                   >
                     Sign Up
                   </Button>
@@ -91,23 +92,17 @@ export function Header() {
               </div>
             )
           ) : (
-            <span className="text-sm text-muted-foreground px-2">
+            <span className="text-sm text-[var(--text-secondary)] px-2 animate-pulse">
               Loading...
             </span>
           )}
         </div>
       </div>
-
-      {/* Mobile Navigation */}
-      <nav className="flex md:hidden justify-center gap-6 py-2 font-semibold text-gray-700 dark:text-gray-200 bg-background/80 shadow-inner border-t border-border/50">
-        <NavLink href="/#features">Features</NavLink>
-        <NavLink href="/#how-it-works">How It Works</NavLink>
-      </nav>
     </header>
   );
 }
 
-// Helper nav link for consistent styles and active state support in the future
+// Optional NavLink helper for future use
 function NavLink({
   href,
   children,
@@ -118,11 +113,12 @@ function NavLink({
   return (
     <Link
       href={href}
-      className="relative py-1.5 px-2 rounded transition-colors hover:text-lime-600 dark:hover:text-lime-200 focus-visible:outline focus-visible:outline-lime-400"
+      className="relative py-1.5 px-3 rounded group transition-colors duration-300 hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-[var(--accent)]"
     >
-      <span className="transition-all">{children}</span>
-      {/* Animated underline on hover/focus */}
-      <span className="block h-[2px] w-0 bg-gradient-to-r from-lime-500 to-green-400 rounded absolute left-1/2 -bottom-1 group-hover:w-full group-hover:left-0 transition-all duration-300"></span>
+      <span className="transition-transform group-hover:scale-105">
+        {children}
+      </span>
+      <span className="block h-[2px] w-0 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] rounded absolute left-1/2 -bottom-1 group-hover:w-full group-hover:left-0 transition-all duration-300"></span>
     </Link>
   );
 }

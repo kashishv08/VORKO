@@ -135,6 +135,7 @@ export const ALL_CONTRACTS = gql`
   query Query {
     getClientActiveContracts {
       id
+      createdAt
       freelancer {
         id
         name
@@ -164,6 +165,7 @@ export const CONTRACT_BY_ID = gql`
       id
       clientId
       freelancerId
+      createdAt
       project {
         description
         title
@@ -205,6 +207,49 @@ export const GET_ALL_CHATS = gql`
         id
         avatar
         role
+      }
+    }
+  }
+`;
+
+export const GET_FREELANCER_CONTRACT = gql`
+  query GetFreelancerActiveContracts {
+    getFreelancerActiveContracts {
+      id
+      clientId
+      freelancerId
+      project {
+        title
+        budget
+        description
+      }
+      client {
+        name
+        avatar
+      }
+      freelancer {
+        name
+        avatar
+      }
+      createdAt
+      status
+    }
+  }
+`;
+
+export const CLIENT_DASHBOARD = gql`
+  query ClientDashboard {
+    clientDashboard {
+      activeContractsCount
+      proposalsPendingCount
+      activeProjects {
+        id
+        title
+        description
+        budget
+        deadline
+        status
+        createdAt
       }
     }
   }

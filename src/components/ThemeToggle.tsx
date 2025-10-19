@@ -13,6 +13,7 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       data-testid="button-theme-toggle"
       aria-label="Toggle theme"
+      className="cursor-pointer"
     >
       {theme === "light" ? (
         <Moon className="h-5 w-5" />

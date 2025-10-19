@@ -10,7 +10,7 @@ export default function SignUpPage() {
   const { user } = useUser();
   const router = useRouter();
 
-  console.log("signup", role);
+  // console.log("signup", role);
 
   useEffect(() => {
     if (!role) return;
