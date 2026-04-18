@@ -163,7 +163,7 @@ export default function MyProjectsPage() {
                 ? "My Projects"
                 : tab === "posted"
                 ? "Posted Projects"
-                : "Active Contracts"}
+                : "Contracts"}
             </TabsTrigger>
           ))}
         </TabsList>

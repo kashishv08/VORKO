@@ -48,6 +48,12 @@ export const GET_ONE_PROJECT = gql`
         coverLetter
         amount
         status
+        freelancer {
+          id
+          clerkId
+          name
+          avatar
+        }
       }
       contract {
         status
@@ -136,6 +142,7 @@ export const ALL_CONTRACTS = gql`
     getClientActiveContracts {
       id
       createdAt
+      workSubmitted
       freelancer {
         id
         name
@@ -166,6 +173,11 @@ export const CONTRACT_BY_ID = gql`
       clientId
       freelancerId
       createdAt
+      workSubmitted
+      freelancerAmount
+      platformFee
+      amountPaid
+      paymentStatus
       project {
         description
         title
@@ -218,6 +230,7 @@ export const GET_FREELANCER_CONTRACT = gql`
       id
       clientId
       freelancerId
+      workSubmitted
       project {
         title
         budget
@@ -251,6 +264,76 @@ export const CLIENT_DASHBOARD = gql`
         status
         createdAt
       }
+      totalspent
+    }
+  }
+`;
+
+export const FREELANCER_DASHBOARD = gql`
+  query FreelancerDashboard {
+    freelancerDashboard {
+      latestProposals {
+        amount
+        status
+        project {
+          id
+          title
+          client {
+            name
+          }
+        }
+      }
+      stats {
+        activeProposalsCount
+        activeContractsCount
+        totalProposalsCount
+        totalEarnings
+      }
+    }
+  }
+`;
+
+export const EDIT_PROFILE = gql`
+  mutation EditProfile(
+    $id: String!
+    $skills: [String!]
+    $name: String
+    $bio: String
+  ) {
+    editProfile(id: $id, skills: $skills, name: $name, bio: $bio) {
+      id
+      name
+      role
+      avatar
+      bio
+      skills
+    }
+  }
+`;
+
+export const EARNING_GRAPH = gql`
+  query EarningsGraph {
+    earningsGraph {
+      month
+      total
+    }
+  }
+`;
+
+export const RECENT_CHAT = gql`
+  query GetRecentMessages($userId: String!) {
+    getRecentMessages(userId: $userId) {
+      contractId
+      projectName
+      otherUser {
+        id
+        name
+        avatar
+      }
+      lastMessageId
+      lastMessageText
+      lastMessageSender
+      lastMessageCreatedAt
     }
   }
 `;

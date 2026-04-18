@@ -19,12 +19,11 @@ export async function POST(req: Request) {
       });
     }
 
-    // optional: create user if not found
     if (!user) {
       await prismaClient.user.create({
         data: {
           clerkId,
-          email: "", // Clerk webhook will fill later
+          email: "",
           name: "",
           role,
           onboardingComplete: false,

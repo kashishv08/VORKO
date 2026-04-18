@@ -1,9 +1,5 @@
 import gql from "graphql-tag";
 
-// deliverWork(contractId: String!, submissionLink: String!): Contract!
-// approveWork(contractId: String!): Contract!
-// requestRevision(contractId: String!, feedback: String!): Contract!
-
 export const typeDefs = gql`
   type Query {
     clientAllPostedProjects(id: String!): [Project]!
@@ -16,6 +12,9 @@ export const typeDefs = gql`
     getUserChats: [UserChat!]!
     getFreelancerActiveContracts: [Contract]!
     clientDashboard: ClientDashboard!
+    freelancerDashboard: FreelancerDashboard!
+    earningsGraph: [Graph]!
+    getRecentMessages(userId: String!): [UserChat!]!
   }
 
   type Mutation {
@@ -34,12 +33,39 @@ export const typeDefs = gql`
     acceptProposal(proposalId: String!): Proposal!
     rejectProposal(proposalId: String!): Proposal!
     generateChatToken(contractId: String!): ChatToken!
+    editProfile(
+      id: String!
+      name: String
+      bio: String
+      skills: [String!]
+    ): User!
+    markWorkSubmitted(id: String!): Contract!
+    completeContract(id: String!): Contract!
+    processContractPayment(id: String!): Contract!
+  }
+
+  type Graph {
+    month: String!
+    total: Float!
+  }
+
+  type stateType {
+    activeProposalsCount: Int!
+    activeContractsCount: Int!
+    totalProposalsCount: Int!
+    totalEarnings: Float!
+  }
+
+  type FreelancerDashboard {
+    stats: stateType
+    latestProposals: [Proposal!]!
   }
 
   type ClientDashboard {
     activeProjects: [Project!]!
     activeContractsCount: Int!
     proposalsPendingCount: Int!
+    totalspent: Float!
   }
 
   type UserChat {
@@ -47,6 +73,10 @@ export const typeDefs = gql`
     projectName: String
     otherUser: User
     lastMessage: String
+    lastMessageId: String
+    lastMessageText: String
+    lastMessageSender: String
+    lastMessageCreatedAt: String
   }
 
   type ChatToken {
@@ -106,6 +136,19 @@ export const typeDefs = gql`
     freelancer: User
     status: ContractStatus
     createdAt: String
+    workSubmitted: Boolean
+    stripePaymentIntentId: String
+    paymentStatus: String
+    amountPaid: Float
+    platformFee: Float
+    freelancerAmount: Float
+    meeting: Meeting
+  }
+
+  type Meeting {
+    id: String!
+    contractId: String!
+    streamMeetingId: String!
   }
 
   enum Role {
@@ -125,5 +168,8 @@ export const typeDefs = gql`
     skills: [String!]!
     projects: [Project!]
     proposals: [Proposal!]
+    stripeAccountId: String
+    stripeOnboardingUrl: String
+    onboardingComplete: Boolean
   }
 `;

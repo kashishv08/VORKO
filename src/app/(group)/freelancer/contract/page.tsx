@@ -52,6 +52,8 @@ export default function FreelancerContractsPage() {
     );
   }
 
+  console.log(contracts);
+
   return (
     <div className="min-h-screen px-6 py-8 bg-background ">
       <h5 className="mx-auto text-xl font-bold mb-4">All Contracts</h5>
@@ -112,15 +114,11 @@ export default function FreelancerContractsPage() {
                   >
                     View Contract
                   </Link>
-                  <Link
-                    href={`/freelancer/messages/${contract.id}`}
-                    className="inline-flex items-center gap-3 px-5 py-3 rounded-lg border border-border text-foreground bg-surface hover:bg-surface-glass transition-colors text-sm justify-center shadow"
+                  <span
+                    className={`px-5 py-1.5 rounded-full text-sm font-semibold select-none bg-surfaceGlass mt-2`}
                   >
-                    Messages
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-xs font-bold">
-                      {contract.proposal?.length ?? 0}
-                    </span>
-                  </Link>
+                    {contract.status}
+                  </span>
                 </div>
               </div>
             ))}

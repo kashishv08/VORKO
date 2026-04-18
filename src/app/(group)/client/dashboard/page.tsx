@@ -1,254 +1,253 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
-import Image from "next/image";
-import { motion, useAnimation } from "framer-motion";
 import { useTheme } from "@/src/components/context/ThemeContext";
+import { CLIENT_DASHBOARD, EARNING_GRAPH } from "@/src/lib/gql/queries";
 import { gqlClient } from "@/src/lib/service/gql";
-import { CLIENT_DASHBOARD } from "@/src/lib/gql/queries";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import type { Variants } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
+import RecentMessages from "@/src/components/chat/RecentMessages";
+import { Spinner } from "@radix-ui/themes";
 
-export default function DashboardPage() {
+type states = {
+  label: string;
+  value: number | string;
+};
+
+type dashboard = {
+  activeContractsCount: number;
+  proposalsPendingCount: number;
+  activeProjects: {
+    budget: number;
+    createdAt: string;
+    deadline: string;
+    description: string;
+    id: string;
+    status: string;
+    title: string;
+  }[];
+  totalspent: number;
+};
+
+type ProjectDisplay = {
+  id: string;
+  title: string;
+  status: string;
+  action: string;
+};
+
+export default function ClientDashboardPage() {
   const { theme } = useTheme();
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const controls = useAnimation();
+  const [stats, setStats] = useState<states[]>([]);
+  const [projects, setProjects] = useState<ProjectDisplay[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useUser();
+  // console.log(user);
 
-  const [stats, setStats] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  const fadeUp: Variants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.4, ease: ["easeOut"] },
+    },
+  };
 
-  // 🟩 Fetch data from GraphQL
+  // Fetch GraphQL data
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDashboard = async () => {
       try {
-        const { clientDashboard } = await gqlClient.request(CLIENT_DASHBOARD);
+        const data: { clientDashboard: dashboard } = await gqlClient.request(
+          CLIENT_DASHBOARD
+        );
+        console.log(data.clientDashboard);
 
         const formattedStats = [
           {
             label: "Pending Proposals",
-            value: String(clientDashboard.proposalsPendingCount),
+            value: data.clientDashboard.proposalsPendingCount,
           },
           {
             label: "Active Contracts",
-            value: String(clientDashboard.activeContractsCount),
+            value: data.clientDashboard.activeContractsCount,
           },
           {
             label: "Active Projects",
-            value: String(clientDashboard.activeProjects.length),
+            value: data.clientDashboard.activeProjects.length,
           },
-          { label: "Total Spent", value: "$1,200" }, // static for now
+          { label: "Total Spent", value: `${data.clientDashboard.totalspent}` },
         ];
 
-        // Format active projects into orders table
-        const formattedOrders = clientDashboard.activeProjects.map(
-          (proj: any) => ({
-            gig: proj.title,
-            freelancer: "—", // placeholder for now
-            status: proj.status,
+        const formattedProjects = data.clientDashboard.activeProjects.map(
+          (p) => ({
+            id: p.id,
+            title: p.title,
+            status: p.status,
             action: "View",
           })
         );
 
         setStats(formattedStats);
-        setOrders(formattedOrders);
+        setProjects(formattedProjects);
       } catch (error) {
-        console.error("Error fetching dashboard:", error);
+        console.error("Error fetching client dashboard:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchData();
+    fetchDashboard();
   }, []);
 
-  // Animation trigger
-  useEffect(() => {
-    controls.start("visible");
-  }, [controls]);
-
-  // Micro parallax
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    function onMove(e: PointerEvent) {
-      const rect = el.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = (e.clientX - cx) / rect.width;
-      const dy = (e.clientY - cy) / rect.height;
-      el.style.setProperty("--px", String(dx.toFixed(3)));
-      el.style.setProperty("--py", String(dy.toFixed(3)));
-    }
-    function onLeave() {
-      el.style.setProperty("--px", "0");
-      el.style.setProperty("--py", "0");
-    }
-    el.addEventListener("pointermove", onMove);
-    el.addEventListener("pointerleave", onLeave);
-    return () => {
-      el.removeEventListener("pointermove", onMove);
-      el.removeEventListener("pointerleave", onLeave);
-    };
-  }, []);
-
-  // Framer motion variants
-  const containerVariant = {
-    hidden: {},
-    visible: { transition: { staggerChildren: 0.06 } },
-  };
-  const fadeUp = {
-    hidden: { opacity: 0, y: 10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.45, ease: "easeOut" },
-    },
-  };
-
-  // Static messages (for now)
-  const messages = [
-    { name: "kashish", text: "Let me know if you need any…" },
-    { name: "Shreya", text: "Sure, I can help with that" },
-    { name: "Aisha", text: "No problem, looking to…" },
+  const meetings = [
+    { title: "Design Review Call", time: "Today, 3:00 PM", icon: "📹" },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size="3" />
+      </div>
+    );
+  }
 
   return (
     <div
-      className="min-h-screen flex"
-      style={{ background: "var(--background)", color: "var(--foreground)" }}
+      className="flex min-h-screen"
+      style={{
+        background: "var(--background)",
+        color: "var(--foreground)",
+      }}
     >
       <main className="flex-1 p-8">
-        {/* Topbar */}
+        {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="flex items-center justify-between mb-8"
+          transition={{ duration: 0.4 }}
+          className="flex justify-between items-center mb-10"
         >
           <div>
-            <h2 className="text-2xl font-bold">Dashboard</h2>
-            <p className="text-sm text-[var(--muted)]">
-              Welcome back — here’s your activity.
+            <h2 className="text-3xl font-bold">Welcome back, Client 👋</h2>
+            <p className="text-sm text-muted mt-1">
+              Here’s an overview of your activity.
             </p>
           </div>
         </motion.div>
 
-        {/* Stats Section */}
+        {/* Stats Grid */}
         <motion.div
-          ref={containerRef}
-          variants={containerVariant}
+          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10"
           initial="hidden"
-          animate={controls}
-          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8"
-          style={{ perspective: 800 }}
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
         >
-          {stats.map((s, i) => (
+          {stats.map((stat, i) => (
             <motion.div
               key={i}
               variants={fadeUp}
               whileHover={{
-                translateY: -8,
-                boxShadow: "0 18px 40px rgba(31,125,83,0.12)",
+                y: -8,
+                boxShadow: "0 12px 30px rgba(31,125,83,0.15)",
               }}
-              className="rounded-xl p-6 text-center cursor-default transform-gpu transition-transform"
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="rounded-xl p-6 text-center transform-gpu"
               style={{
-                background: "var(--surface)",
-                color: "var(--foreground)",
-                transform: `translate3d(calc(var(--px,0) * ${
-                  6 * (i - 1)
-                }px), calc(var(--py,0) * ${6 * (i - 1)}px), 0)`,
-                border: "1px solid rgba(255,255,255,0.03)",
-                backdropFilter: "blur(6px)",
+                background:
+                  theme === "light"
+                    ? "linear-gradient(180deg, var(--surface), rgba(255,255,255,0.9))"
+                    : "linear-gradient(180deg, var(--surface), rgba(31,31,31,0.8))",
+                border: "1px solid rgba(255,255,255,0.06)",
+                backdropFilter: "blur(10px)",
               }}
             >
-              <p className="text-2xl font-semibold">{s.value}</p>
-              <p className="text-sm text-[var(--muted)] mt-1">{s.label}</p>
+              <p className="text-3xl font-semibold text-[var(--primary)]">
+                {stat.value}
+              </p>
+              <p className="text-sm mt-1 text-muted">{stat.label}</p>
             </motion.div>
           ))}
         </motion.div>
 
-        {/* Content grid */}
+        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Active Orders (left, spans 2) */}
+          {/* Active Projects Section */}
           <motion.section
+            variants={fadeUp}
             initial="hidden"
             animate="visible"
-            variants={containerVariant}
             className="lg:col-span-2 rounded-xl p-6"
             style={{
               background: "var(--surface)",
-              color: "var(--foreground)",
-              border: "1px solid rgba(255,255,255,0.04)",
-              backdropFilter: "blur(6px)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              backdropFilter: "blur(10px)",
             }}
           >
-            <motion.h3 variants={fadeUp} className="text-lg font-semibold mb-4">
-              Active Projects
-            </motion.h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Active Projects</h3>
+              <Link
+                href="/client/project"
+                className="text-[var(--primary)] text-sm hover:underline"
+              >
+                View All
+              </Link>
+            </div>
 
-            <div className="w-full overflow-hidden rounded-md">
-              <table className="w-full text-left">
+            {loading ? (
+              <p className="text-sm text-muted">Loading projects...</p>
+            ) : projects.length > 0 ? (
+              <table className="w-full text-left text-sm">
                 <thead>
-                  <tr>
-                    <th className="pb-3 text-xs uppercase tracking-wide text-[var(--muted)]">
-                      Project
-                    </th>
-                    <th className="pb-3 text-xs uppercase tracking-wide text-[var(--muted)]">
-                      Status
-                    </th>
-                    <th className="pb-3 text-xs uppercase tracking-wide text-[var(--muted)]">
-                      Actions
-                    </th>
+                  <tr className="text-muted text-xs uppercase tracking-wider">
+                    {["Project", "Status", "Action"].map((head) => (
+                      <th key={head} className="pb-3">
+                        {head}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody
                   className="divide-y"
-                  style={{ borderColor: "rgba(255,255,255,0.03)" }}
+                  style={{ borderColor: "rgba(255,255,255,0.06)" }}
                 >
-                  {orders.map((o, idx) => (
+                  {projects.map((p, idx) => (
                     <motion.tr
                       key={idx}
-                      variants={fadeUp}
-                      whileHover={{ scale: 1.01 }}
-                      className="group"
-                      style={{ transition: "transform 180ms ease" }}
+                      whileHover={{ background: "rgba(31,125,83,0.06)" }}
+                      className="transition-colors"
                     >
-                      <td className="py-4">{o.gig}</td>
-                      <td className="py-4">
-                        <span
-                          className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium"
-                          style={{
-                            background:
-                              o.status === "OPEN"
-                                ? "rgba(31,125,83,0.08)"
-                                : "rgba(125,125,125,0.06)",
-                            color:
-                              o.status === "OPEN"
-                                ? "var(--primary)"
-                                : "var(--muted)",
-                            border: "1px solid rgba(255,255,255,0.02)",
-                          }}
-                        >
-                          {o.status}
-                        </span>
-                      </td>
+                      <td className="py-4 font-medium">{p.title}</td>
+                      <td className="py-4">{p.status}</td>
                       <td className="py-4">
                         <motion.button
-                          whileHover={{ scale: 1.04 }}
+                          whileHover={{ scale: 1.05 }}
                           className="px-3 py-1 rounded-md text-sm font-medium"
                           style={{
-                            background: "var(--primary)",
-                            color: "white",
-                            boxShadow: "0 8px 24px rgba(31,125,83,0.12)",
+                            background:
+                              "linear-gradient(90deg, var(--primary), var(--accent))",
+                            color: "#fff",
                           }}
                         >
-                          {o.action}
+                          <Link
+                            href={`/client/project/${p.id}`}
+                            className="cursor-pointer"
+                          >
+                            {p.action}
+                          </Link>
                         </motion.button>
                       </td>
                     </motion.tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+            ) : (
+              <p className="text-sm text-muted">No active projects found.</p>
+            )}
           </motion.section>
 
-          {/* Right column — Messages and Meetings remain static for now */}
+          {/* Right Sidebar */}
           <div className="flex flex-col gap-6">
             {/* Messages */}
             <motion.div
@@ -258,73 +257,70 @@ export default function DashboardPage() {
               className="rounded-xl p-6"
               style={{
                 background: "var(--surface)",
-                color: "var(--foreground)",
-                border: "1px solid rgba(255,255,255,0.04)",
-                backdropFilter: "blur(6px)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                backdropFilter: "blur(10px)",
               }}
             >
-              <h3 className="text-lg font-semibold mb-4">Messages</h3>
-              <div className="flex flex-col gap-4">
-                {messages.map((m, i) => (
-                  <motion.div
-                    key={i}
-                    whileHover={{ x: 6 }}
-                    className="flex items-center gap-3"
-                    style={{ transition: "transform 180ms ease" }}
-                  >
-                    <Image
-                      height={100}
-                      width={100}
-                      src={`/avatar-${m.name.toLowerCase()}.jpg`}
-                      alt={m.name}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                    <div>
-                      <p className="font-medium text-sm">{m.name}</p>
-                      <p className="text-xs text-[var(--muted)]">{m.text}</p>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Messages</h3>
+                <Link
+                  href="/client/chat"
+                  className="text-[var(--primary)] text-sm hover:underline"
+                >
+                  View All
+                </Link>
               </div>
+              {/* recent chats compo */}
+              <RecentMessages />
             </motion.div>
 
             {/* Meetings */}
             <motion.div
               variants={fadeUp}
+              initial="hidden"
+              animate="visible"
               className="rounded-xl p-6 flex flex-col gap-4"
               style={{
                 background: "var(--surface)",
-                color: "var(--foreground)",
-                border: "1px solid rgba(255,255,255,0.04)",
-                backdropFilter: "blur(6px)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                backdropFilter: "blur(10px)",
               }}
             >
-              <h3 className="text-lg font-semibold">Meetings</h3>
-
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                  style={{
-                    background: "var(--accent)",
-                    color: "white",
-                  }}
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-lg font-semibold">Meetings</h3>
+                <Link
+                  href="/client/meetings"
+                  className="text-[var(--primary)] text-sm hover:underline"
                 >
-                  📹
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">Video Call with kashish</p>
-                  <p className="text-xs text-[var(--muted)]">Today, 3:00 PM</p>
-                </div>
+                  View All
+                </Link>
               </div>
+
+              {meetings.map((m, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{
+                      background: "var(--accent)",
+                      color: "#fff",
+                    }}
+                  >
+                    {m.icon}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{m.title}</p>
+                    <p className="text-xs text-muted">{m.time}</p>
+                  </div>
+                </div>
+              ))}
 
               <motion.button
                 whileHover={{ scale: 1.03 }}
-                className="w-full py-2 rounded-lg font-medium"
+                className="w-full py-2 rounded-lg font-medium shadow-md"
                 style={{
                   background:
                     "linear-gradient(90deg, var(--primary), var(--accent))",
-                  color: "white",
-                  boxShadow: "0 12px 30px rgba(31,125,83,0.12)",
+                  color: "#fff",
                 }}
               >
                 Join Meeting

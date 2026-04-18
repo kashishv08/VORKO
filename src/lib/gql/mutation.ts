@@ -15,6 +15,8 @@ export const COMPLETE_ONBOARD = gql`
       bio
       skills
       clerkId
+      onboardingComplete
+      stripeOnboardingUrl
     }
   }
 `;
@@ -114,30 +116,39 @@ export const GENERATE_TOKEN = gql`
   }
 `;
 
-export const DELIVER_WORK = gql`
-  mutation DeliverWork($contractId: String!, $submissionLink: String!) {
-    deliverWork(contractId: $contractId, submissionLink: $submissionLink) {
-      id
+export const MARK_PROJ_COMPLETED = gql`
+  mutation Mutation($id: String!) {
+    completeContract(id: $id) {
       status
-      submissionLink
+      id
     }
   }
 `;
 
-export const APPROVE_WORK = gql`
-  mutation ApproveWork($contractId: String!) {
-    approveWork(contractId: $contractId) {
+export const MARK_PROJ_SUBMIT = gql`
+  mutation MarkWorkSubmitted($id: String!) {
+    markWorkSubmitted(id: $id) {
       id
       status
     }
   }
 `;
 
-export const REQUEST_REVISION = gql`
-  mutation RequestRevision($contractId: String!, $feedback: String!) {
-    requestRevision(contractId: $contractId, feedback: $feedback) {
+export const PROCESS_PAYMENT = gql`
+  mutation Mutation($id: String!) {
+    processContractPayment(id: $id) {
       id
+      freelancerId
+      clientId
       status
+      createdAt
+      workSubmitted
+      stripePaymentIntentId
+      paymentStatus
+      amountPaid
+      platformFee
+      freelancerAmount
+      checkoutUrl
     }
   }
 `;

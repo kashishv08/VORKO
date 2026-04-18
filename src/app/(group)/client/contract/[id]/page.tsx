@@ -1,7 +1,6 @@
 "use client";
 
 import ChatComponent from "@/src/components/chat/ChatComponent";
-import { useTheme } from "@/src/components/context/ThemeContext";
 import { Button } from "@/src/components/ui/button";
 import {
   Tabs,
@@ -9,15 +8,17 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/src/components/ui/tabs";
+import { MARK_PROJ_COMPLETED, PROCESS_PAYMENT } from "@/src/lib/gql/mutation";
 import { CONTRACT_BY_ID } from "@/src/lib/gql/queries";
 import { gqlClient } from "@/src/lib/service/gql";
-import { User } from "@prisma/client";
+import { ContractStatus, User } from "@prisma/client";
 import { Spinner } from "@radix-ui/themes";
-import { CreditCard, MessageSquare, Star } from "lucide-react";
+import { CreditCard, MessageSquare, Star, Video } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCalendarAlt, FaDollarSign } from "react-icons/fa";
+import { toast } from "sonner";
 import { contract } from "../page";
 
 function UserAvatar({
@@ -44,9 +45,10 @@ export default function ContractDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
-    if (showChat) {
+    if (showChat || showConfirmModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -55,7 +57,7 @@ export default function ContractDetailPage() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [showChat]);
+  }, [showChat, showConfirmModal]);
 
   useEffect(() => {
     fetch("/api/currentUser")
@@ -75,7 +77,7 @@ export default function ContractDetailPage() {
         );
         setContract(res?.contractById);
       } catch {
-        router.push("/contract");
+        router.push("/client/contract");
       } finally {
         setLoading(false);
       }
@@ -89,6 +91,26 @@ export default function ContractDetailPage() {
       month: "short",
       year: "numeric",
     });
+
+  const handlePay = async () => {
+    console.log("contract id", contract);
+    setLoading(true);
+    try {
+      const res = await gqlClient.request(PROCESS_PAYMENT, {
+        id: contract?.id,
+      });
+
+      console.log(res);
+
+      // Redirect client to Stripe Checkout page
+      router.push(`${res.processContractPayment.checkoutUrl}`);
+    } catch (err) {
+      console.error(err);
+      toast("Payment initialization failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading)
     return (
@@ -106,7 +128,8 @@ export default function ContractDetailPage() {
 
   const isActive = contract?.status === "ACTIVE";
 
-  // console.log(contract);
+  // console.log("contract", contract);
+  // console.log("contract  wala user ", currentUser);
 
   return (
     <div className="min-h-screen bg-background text-foreground py-8 px-4 transition-all duration-500">
@@ -132,9 +155,11 @@ export default function ContractDetailPage() {
           </h1>
           <span
             className={`px-5 py-1.5 rounded-full text-sm font-semibold select-none ${
-              isActive
+              contract.status === "ACTIVE"
                 ? "bg-primary text-white shadow-glow"
-                : "bg-surfaceGlass text-muted"
+                : contract.status === "REVIEW_PENDING"
+                ? "bg-secondary text-white"
+                : "bg-surfaceGlass text-white"
             }`}
           >
             {contract.status}
@@ -185,9 +210,33 @@ export default function ContractDetailPage() {
 
         {/* Project Description */}
         <div>
-          <h2 className="text-xl font-bold mb-3 text-primary">
-            Project Description
-          </h2>
+          <div className="flex justify-between items-center mb-3 w-full">
+            <h2 className="text-xl font-bold text-primary">
+              Project Description
+            </h2>
+
+            {currentUser?.id === contract.clientId &&
+              contract.status !== "COMPLETED" && (
+                <div className="flex flex-wrap gap-3 justify-end m-0">
+                  {/* Cancel Contract */}
+                  {/* <Button className="cursor-pointer bg-accent text-white hover:bg-secondary shadow transition-all rounded-xl px-4 py-2 font-semibold hover:bg-secondary">
+                    Cancel Contract
+                  </Button> */}
+
+                  {/* Mark as Completed */}
+                  {contract.workSubmitted && (
+                    <Button
+                      className="cursor-pointer button-gradient shadow-glow rounded-xl px-4 py-2 font-semibold"
+                      onClick={() => setShowConfirmModal(true)}
+                      disabled={loading}
+                    >
+                      {loading ? "Updating..." : "Mark as Completed"}
+                    </Button>
+                  )}
+                </div>
+              )}
+          </div>
+
           <p className="text-lg leading-relaxed text-muted">
             {contract.project.description}
           </p>
@@ -201,7 +250,7 @@ export default function ContractDetailPage() {
             {[
               { tab: "messages", label: "Messages", Icon: MessageSquare },
               { tab: "payments", label: "Payments", Icon: CreditCard },
-              { tab: "review", label: "Review", Icon: Star },
+              { tab: "meeting", label: "Meeting", Icon: Video },
             ].map(({ tab, label, Icon }) => (
               <TabsTrigger
                 key={tab}
@@ -272,34 +321,119 @@ export default function ContractDetailPage() {
               <p className="mb-5 text-muted text-lg">
                 Manage payment transactions securely.
               </p>
-              <Button
-                className="button-gradient"
-                onClick={() =>
-                  router.push(`/payments?contractId=${contract.id}`)
-                }
-              >
-                View Payments
-              </Button>
+
+              {contract.status === "ACTIVE" ||
+              contract.status === "REVIEW_PENDING" ? (
+                <p>
+                  Payment will be available after the freelancer submits work
+                  and the contract is completed.
+                </p>
+              ) : contract.status === "COMPLETED" &&
+                contract.paymentStatus !== "PAID" ? (
+                <>
+                  <p className="mb-4">
+                    Contract is completed. Please proceed with the payment.
+                  </p>
+                  <Button
+                    className="cursor-pointer w-[100px] shadow bg-background"
+                    onClick={handlePay}
+                    disabled={loading}
+                  >
+                    {loading ? "Redirecting to Stripe..." : "Pay Now"}
+                  </Button>
+                </>
+              ) : contract.paymentStatus === "PAID" ? (
+                <div className="p-4 bg-background rounded-lg shadow-inner">
+                  <p>✅ Payment Completed</p>
+                  <p>Total Paid: ${contract.amountPaid?.toLocaleString()}</p>
+                  <p>
+                    Platform Fee Deducted: $
+                    {contract.platformFee?.toLocaleString()}
+                  </p>
+                  <p>
+                    Freelancer Receives: $
+                    {contract.freelancerAmount?.toLocaleString()}
+                  </p>
+                </div>
+              ) : contract.status === "CANCELLED" ? (
+                <p>
+                  This contract has been cancelled. No payments are available.
+                </p>
+              ) : (
+                <p>Payment information is not available.</p>
+              )}
             </div>
           </TabsContent>
 
           {/* Review Tab */}
-          <TabsContent value="review">
+          <TabsContent value="meeting">
             <div className="rounded-2xl p-8 text-center bg-surface shadow transition-transform duration-300 hover:scale-[1.01]">
-              <Star className="h-14 w-14 text-primary mb-5 mx-auto animate-pulse" />
+              <Video className="h-14 w-14 text-primary mb-5 mx-auto animate-pulse" />
               <p className="mb-5 text-muted text-lg">
-                Leave a review after project completion.
+                Now view your project status through meeting.
               </p>
               <Button
-                className="button-gradient"
-                onClick={() => router.push(`/review?contractId=${contract.id}`)}
+                className="cursor-pointer button-gradient"
+                onClick={() => router.push(`/meeting/${contract.id}`)}
               >
-                Leave a Review
+                Join Meeting
               </Button>
             </div>
           </TabsContent>
         </Tabs>
       </div>
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs animate-fadeIn">
+          {/* 🔹 Modal Container */}
+          <div
+            className="bg-surface rounded-2xl shadow-2xl p-10 w-full max-w-2xl mx-4 border border-border text-center animate-fadeInUp"
+            style={{ willChange: "transform" }}
+          >
+            <h3 className="text-2xl font-bold text-primary mb-4">
+              Mark Contract as Completed?
+            </h3>
+            <p className="text-muted mb-8 text-lg leading-relaxed">
+              Are you sure you want to mark this contract as{" "}
+              <strong>completed</strong>? Once confirmed, this action cannot be
+              undone. The freelancer will be notified, and payment release can
+              be processed.
+            </p>
+
+            <div className="flex justify-center gap-6 mt-4">
+              <Button
+                className="cursor-pointer bg-accent text-white hover:bg-secondary rounded-xl px-6 py-3 font-semibold transition-all"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                className="cursor-pointer button-gradient shadow-glow rounded-xl px-6 py-3 font-semibold transition-all"
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const res: {
+                      completeContract: { status: ContractStatus };
+                    } = await gqlClient.request(MARK_PROJ_COMPLETED, {
+                      id: contract.id,
+                    });
+                    setContract((prev) => ({
+                      ...prev!,
+                      status: res.completeContract.status,
+                    }));
+                    setShowConfirmModal(false);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+              >
+                {loading ? "Processing..." : "Yes, Complete It"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

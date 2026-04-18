@@ -1,19 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/src/components/context/ThemeContext";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  LayoutDashboard,
   Folder,
+  LayoutDashboard,
   MessageSquare,
-  Video,
   Star,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
+  Video,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 export const Sidebar = () => {
   const { theme } = useTheme();
@@ -36,17 +33,6 @@ export const Sidebar = () => {
       name: "Messages",
       href: "/client/chat",
       icon: <MessageSquare className="w-5 h-5" />,
-    },
-    {
-      name: "Meetings",
-      href: "/meetings",
-      icon: <Video className="w-5 h-5" />,
-    },
-    { name: "Reviews", href: "/reviews", icon: <Star className="w-5 h-5" /> },
-    {
-      name: "Settings",
-      href: "/settings",
-      icon: <Settings className="w-5 h-5" />,
     },
   ];
 

@@ -10,18 +10,31 @@ import { useEffect, useState } from "react";
 import { useTheme } from "@/src/components/context/ThemeContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { PencilIcon } from "lucide-react";
+import { PencilIcon, CheckCircle2, XCircle, Hourglass } from "lucide-react";
 import { Spinner } from "@radix-ui/themes";
+import { useUser } from "@clerk/nextjs";
 
-type ProjWithClient = Project & { client: User };
+type ProjWithClient = Project & {
+  client: User;
+  proposals: {
+    id: string;
+    coverLetter: string;
+    amount: number;
+    status: "SUBMITTED" | "ACCEPTED" | "REJECTED";
+    freelancer: { id: string; name: string; avatar?: string; clerkId: string };
+  }[];
+};
 
 export default function ProjectDetailPage() {
   const params = useParams();
-  const id = params.id;
+  const id = params.id as string;
   const { theme } = useTheme();
+  const { user, isLoaded } = useUser();
 
   const [project, setProject] = useState<ProjWithClient>();
-  const [proposalStatus, setProposalStatus] = useState("");
+  const [proposalStatus, setProposalStatus] = useState<
+    "SUBMITTED" | "ACCEPTED" | "REJECTED" | ""
+  >("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bidAmount, setBidAmount] = useState("");
   const [proposalMessage, setProposalMessage] = useState("");
@@ -32,19 +45,48 @@ export default function ProjectDetailPage() {
   }>({});
 
   useEffect(() => {
+    if (isModalOpen && proposalStatus === "SUBMITTED") {
+      const existing = project?.proposals.find(
+        (p) => p.freelancer?.clerkId === user?.id
+      );
+      if (existing) {
+        setBidAmount(existing.amount.toString());
+        setProposalMessage(existing.coverLetter);
+      }
+    }
+  }, [isModalOpen]);
+
+  useEffect(() => {
+    if (!id || !isLoaded || !user) return;
+
     const fetchProj = async () => {
       try {
-        const proj: { getProjectById: ProjWithClient } =
-          await gqlClient.request(GET_ONE_PROJECT, { id });
-        setProject(proj.getProjectById);
+        const data: { getProjectById: ProjWithClient } =
+          await gqlClient.request(GET_ONE_PROJECT, {
+            id,
+          });
+
+        setProject(data.getProjectById);
+
+        const existingProposal = data.getProjectById.proposals.find(
+          (p) => p.freelancer?.clerkId === user.id // adjust if different ID mapping
+        );
+
+        if (existingProposal) {
+          setProposalStatus(existingProposal.status);
+          setBidAmount(existingProposal.amount.toString());
+          setProposalMessage(existingProposal.coverLetter);
+        }
       } catch (err) {
         console.error(err);
         toast.error("Failed to load project.");
       }
     };
-    fetchProj();
-  }, [id]);
 
+    fetchProj();
+  }, [id, user, isLoaded]);
+
+  // 🟢 Submit or edit proposal
   const handleSubmitProposal = async () => {
     const newErrors: typeof errors = {};
     if (!bidAmount || Number(bidAmount) <= 0)
@@ -63,9 +105,14 @@ export default function ProjectDetailPage() {
         coverLetter: proposalMessage,
         projectId: id,
       });
+
       setProposalStatus("SUBMITTED");
       setIsModalOpen(false);
-      toast.success("Proposal submitted successfully!");
+      toast.success(
+        proposalStatus
+          ? "Proposal updated successfully!"
+          : "Proposal submitted!"
+      );
     } catch (err) {
       console.error(err);
       toast.error("Error submitting proposal. Try again.");
@@ -91,15 +138,40 @@ export default function ProjectDetailPage() {
     );
   }
 
+  // 🟢 UI status message
+  const renderProposalStatus = () => {
+    switch (proposalStatus) {
+      case "SUBMITTED":
+        return (
+          <div className="flex items-center gap-2 text-amber-500 bg-amber-100/10 px-4 py-2 rounded-lg border border-amber-400/20">
+            <Hourglass className="w-5 h-5" />
+            <span>Proposal submitted — waiting for client’s response.</span>
+          </div>
+        );
+      case "ACCEPTED":
+        return (
+          <div className="flex items-center gap-2 text-emerald-500 bg-emerald-100/10 px-4 py-2 rounded-lg border border-emerald-400/20">
+            <CheckCircle2 className="w-5 h-5" />
+            <span>Your proposal has been accepted.</span>
+          </div>
+        );
+      case "REJECTED":
+        return (
+          <div className="flex items-center gap-2 text-red-500 bg-red-100/10 px-4 py-2 rounded-lg border border-red-400/20">
+            <XCircle className="w-5 h-5" />
+            <span>Your proposal was rejected. Better luck next time.</span>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div
-      className={`min-h-screen py-10 px-6 md:px-12 ${
-        theme === "dark"
-          ? "bg-background text-foreground"
-          : "bg-background text-foreground"
-      }`}
+      className={`min-h-screen py-10 px-6 md:px-12 bg-background text-foreground`}
     >
-      {/* Header with Proposal Status + Submit/Edit button */}
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-10">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
@@ -108,26 +180,41 @@ export default function ProjectDetailPage() {
         >
           Project Details
         </motion.h1>
-        <div className="flex items-center gap-4">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            className="py-2 px-4 rounded-xl button-gradient text-white font-semibold cursor-pointer shadow-glow flex items-center gap-2"
-            onClick={() => setIsModalOpen(true)}
-          >
-            {proposalStatus ? (
-              <>
-                <PencilIcon className="w-5 h-5" />
-                Proposal Submitted
-              </>
-            ) : (
-              "Submit Proposal"
-            )}
-          </motion.button>
-        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          className="py-2 px-4 rounded-xl button-gradient text-white font-semibold cursor-pointer shadow-glow flex items-center gap-2"
+          onClick={() => setIsModalOpen(true)}
+          disabled={
+            proposalStatus === "ACCEPTED" || proposalStatus === "REJECTED"
+          }
+        >
+          {proposalStatus === "SUBMITTED" ? (
+            <>
+              <PencilIcon className="w-5 h-5" />
+              Edit Proposal
+            </>
+          ) : proposalStatus ? (
+            "Proposal Closed"
+          ) : (
+            "Submit Proposal"
+          )}
+        </motion.button>
       </div>
 
+      {/* STATUS BANNER */}
+      {renderProposalStatus() && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          {renderProposalStatus()}
+        </motion.div>
+      )}
+
+      {/* CONTENT GRID */}
       <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto">
-        {/* Left - Project Info */}
         <motion.div layout className="flex-1 space-y-6">
           <motion.div
             whileHover={{
@@ -141,36 +228,29 @@ export default function ProjectDetailPage() {
             </h2>
 
             <div className="space-y-4">
-              {/* Description */}
               <div>
                 <h3 className="text-lg font-semibold mb-1 text-muted">
                   Description
                 </h3>
-                <p className="text-foreground">{project?.description}</p>
+                <p>{project?.description}</p>
               </div>
-
-              {/* Budget */}
               <div>
                 <h3 className="text-lg font-semibold mb-1 text-muted">
                   Budget
                 </h3>
-                <p className="text-foreground">${project?.budget}</p>
+                <p>${project?.budget}</p>
               </div>
-
-              {/* Deadline */}
               <div>
                 <h3 className="text-lg font-semibold mb-1 text-muted">
                   Deadline
                 </h3>
-                <p className="text-foreground">
-                  {formatDate(Number(project?.deadline))}
-                </p>
+                <p>{formatDate(Number(project?.deadline))}</p>
               </div>
             </div>
           </motion.div>
         </motion.div>
 
-        {/* Right - Client Card */}
+        {/* CLIENT CARD */}
         <motion.div layout className="w-full lg:w-80 flex flex-col gap-6">
           <motion.div
             whileHover={{
@@ -184,31 +264,17 @@ export default function ProjectDetailPage() {
               alt="client"
               height={100}
               width={100}
-              className="w-20 h-20 rounded-full mx-auto mb-2"
+              className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
             />
             <h3 className="font-semibold text-primary">
               {project?.client.name}
             </h3>
             <p className="text-muted text-sm mt-1">{project?.client.bio}</p>
-
-            {/* Submit Proposal button for OPEN projects (if not submitted) */}
-            {/* {project?.status === "OPEN" && !proposalStatus && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                className="mt-6 w-full py-2 rounded-xl button-gradient text-white font-semibold cursor-pointer"
-                onClick={() => {
-                  setErrors({});
-                  setIsModalOpen(true);
-                }}
-              >
-                Submit Proposal
-              </motion.button>
-            )} */}
           </motion.div>
         </motion.div>
       </div>
 
-      {/* Proposal Modal */}
+      {/* PROPOSAL MODAL */}
       <AnimatePresence>
         {isModalOpen && (
           <motion.div
@@ -272,8 +338,8 @@ export default function ProjectDetailPage() {
                   {isSubmitting
                     ? "Submitting..."
                     : proposalStatus
-                    ? "Update"
-                    : "Submit"}
+                    ? "Update Proposal"
+                    : "Submit Proposal"}
                 </button>
               </div>
             </motion.div>

@@ -1,6 +1,6 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { prismaClient } from "@/src/lib/service/prisma";
 import { getCurrentUserFromDB } from "@/src/lib/helper";
+import { prismaClient } from "@/src/lib/service/prisma";
+import { currentUser } from "@clerk/nextjs/server";
 import { StreamChat } from "stream-chat";
 
 // const streamClient = StreamChat.getInstance(
@@ -57,7 +57,15 @@ export const clientAllPostedProjects = async (
 export const getProjectById = async (_: unknown, args: { id: string }) => {
   const proj = await prismaClient.project.findUnique({
     where: { id: args.id },
-    include: { client: true, proposals: true, contract: true },
+    include: {
+      client: true,
+      proposals: {
+        include: {
+          freelancer: true,
+        },
+      },
+      contract: true,
+    },
   });
   return proj;
 };
@@ -106,6 +114,16 @@ export async function acceptProposal(_: unknown, args: { proposalId: string }) {
     include: { project: true, freelancer: true },
   });
 
+  console.log("proposal", proposal);
+
+  await prismaClient.proposal.updateMany({
+    where: {
+      projectId: proposal.projectId,
+      id: { not: proposal.id },
+    },
+    data: { status: "REJECTED" },
+  });
+
   const contract = await prismaClient.contract.create({
     data: {
       projectId: proposal.projectId,
@@ -113,35 +131,36 @@ export async function acceptProposal(_: unknown, args: { proposalId: string }) {
       freelancerId: proposal.freelancerId,
       status: "ACTIVE",
     },
-    include: {
-      freelancer: true,
-      project: true,
-      client: true,
-    },
+    include: { freelancer: true, project: true, client: true },
   });
+
+  console.log("contract", contract);
 
   const serverClient = StreamChat.getInstance(
     process.env.NEXT_PUBLIC_STREAM_API_KEY!,
     process.env.STREAM_API_SECRET!
   );
 
-  // Upsert client
   await serverClient.upsertUser({
     id: contract.clientId,
     name: contract.client.name,
     image: contract.client.avatar ?? undefined,
   });
 
-  // Upsert freelancer
   await serverClient.upsertUser({
     id: contract.freelancerId,
     name: contract.freelancer.name,
     image: contract.freelancer.avatar ?? undefined,
   });
 
+  // 🔹 Update project status
   await prismaClient.project.update({
     where: { id: proposal.projectId },
-    data: { status: "HIRED", contract: { connect: { id: contract.id } } },
+    data: {
+      status: "HIRED",
+      contract: { connect: { id: contract.id } },
+      budget: proposal.amount,
+    },
   });
 
   return proposal;
@@ -178,7 +197,6 @@ export const getClientActiveContracts = async () => {
   const activeContracts = await prismaClient.contract.findMany({
     where: {
       clientId: dbUser.id,
-      status: "ACTIVE",
     },
     include: {
       project: true,
@@ -223,51 +241,9 @@ export async function cancelContract(_: unknown, args: { contractId: string }) {
   });
 }
 
-// export const approveWork = async (_: unknown, args: { contractId: string }) => {
-//   const contract = await prismaClient.contract.update({
-//     where: { id: args.contractId },
-//     data: {
-//       status: "COMPLETED",
-//       completedAt: new Date(),
-//     },
-//     include: { client: true, freelancer: true },
-//   });
-
-//   const channel = streamClient.channel("messaging", args.contractId);
-//   await channel.sendMessage({
-//     text: "Client approved the project. Contract marked as completed.",
-//     user_id: contract.client.id,
-//     type: "system",
-//   });
-
-//   return contract;
-// };
-
-// export const requestRevision = async (
-//   _: unknown,
-//   args: { contractId: string; feedback: string }
-// ) => {
-//   const contract = await prismaClient.contract.update({
-//     where: { id: args.contractId },
-//     data: {
-//       status: "REVISION_REQUESTED",
-//     },
-//     include: { client: true, freelancer: true },
-//   });
-
-//   const channel = streamClient.channel("messaging", args.contractId);
-//   await channel.sendMessage({
-//     text: `Client requested revisions:\n"${args.feedback}"`,
-//     user_id: contract.client.id,
-//     type: "system",
-//   });
-
-//   return contract;
-// };
-
 export const clientDashboard = async () => {
   const user = await getCurrentUserFromDB();
-  // console.log(user);
+  console.log(user);
   if (!user) throw new Error("Unauthorized");
 
   const proposalsPendingCount = await prismaClient.proposal.count({
@@ -280,7 +256,9 @@ export const clientDashboard = async () => {
   const activeContractsCount = await prismaClient.contract.count({
     where: {
       clientId: user.id,
-      status: "ACTIVE",
+      status: {
+        in: ["ACTIVE", "REVIEW_PENDING"],
+      },
     },
   });
 
@@ -291,9 +269,57 @@ export const clientDashboard = async () => {
     take: 5,
   });
 
+  const completedContracts = await prismaClient.contract.findMany({
+    where: {
+      clientId: user.id,
+      status: "COMPLETED",
+    },
+  });
+
+  // console.log(completedContracts);
+
+  const totalspent = completedContracts.reduce(
+    (sum, contract) => sum + (contract.amountPaid || 0),
+    0
+  );
+
   return {
     activeProjects,
     activeContractsCount,
     proposalsPendingCount,
+    totalspent,
   };
+};
+
+export const completeContract = async (_: unknown, args: { id: string }) => {
+  const user = await getCurrentUserFromDB();
+  if (user?.role != "CLIENT") return;
+  return prismaClient.contract.update({
+    where: { id: args.id },
+    data: { status: "COMPLETED" },
+  });
+};
+
+export const earningsGraph = async () => {
+  const contracts = await prismaClient.contract.findMany({
+    where: { paymentStatus: "PAID", completedAt: { not: null } },
+    select: {
+      completedAt: true,
+      project: {
+        select: { budget: true },
+      },
+    },
+  });
+
+  // group by month in JS
+  const grouped: Record<string, number> = {};
+
+  contracts.forEach((c) => {
+    const month = c.completedAt!.toISOString().slice(0, 7);
+    grouped[month] = (grouped[month] || 0) + c.project.budget;
+  });
+
+  return Object.entries(grouped)
+    .map(([month, total]) => ({ month, total }))
+    .sort((a, b) => a.month.localeCompare(b.month));
 };

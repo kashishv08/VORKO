@@ -133,7 +133,7 @@ export default function ProjectPage() {
                   ? "bg-[var(--primary)]/15 text-[var(--primary)]"
                   : project?.status === "HIRED"
                   ? "bg-[var(--highlight)]/20 text-[var(--highlight)]"
-                  : "bg-[var(--surface-glass)] text-[var(--muted)]"
+                  : "bg-[var(--surface-glass)] text-muted"
               }`}
             >
               {project?.status || "—"}

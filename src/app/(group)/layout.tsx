@@ -13,7 +13,7 @@ function Layout({ children }: { children: ReactNode }) {
           <div className="fixed w-full z-10 top-0 left-0">
             <Header />
           </div>
-          <div className="pt-16">{children}</div>
+          <div className="pt-16 bg-background w-full h-screen">{children}</div>
         </div>
         <Toaster position="top-right" />
       </div>

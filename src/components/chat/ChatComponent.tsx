@@ -90,7 +90,7 @@ export default function ChatComponent({
     );
 
   return (
-    // bg-[var(--surface)]/40
+    // bg-surface/40
     <div className="flex flex-col h-full backdrop-blur-lg border-l border-[var(--border)] rounded-2xl shadow-glow overflow-hidden transition-all duration-300">
       <Chat client={client} theme={`messaging ${theme}`}>
         <Channel channel={channel}>
@@ -115,13 +115,13 @@ export default function ChatComponent({
 
             {/* Message List */}
             <div className="h-[71%] p-0 overflow-auto">
-              <div className="shadow-inner bg-[var(--surface)]/50 backdrop-blur-sm border border-[var(--border)] p-0 h-full">
+              <div className="shadow-inner bg-surface/50 backdrop-blur-sm border border-[var(--border)] p-0 h-full">
                 <MessageList />
               </div>
             </div>
 
             {/* Input Box */}
-            <div className="self-end h-[9%] w-full border-t bg-[var(--surface)]/70  border border-[var(--accent)]/40 hover:border-[var(--accent)] transition-all duration-300">
+            <div className="self-end h-[9%] w-full border-t bg-surface/70  border border-accent/40 hover:border-accent transition-all duration-300">
               <MessageInput focus />
             </div>
           </Window>

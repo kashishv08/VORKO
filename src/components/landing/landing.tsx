@@ -16,7 +16,7 @@ export default function Landing() {
       <StatsBar />
 
       {!user?.publicMetadata.onboardingComplete ? (
-        <section className="py-20 px-6" id="how-it-works">
+        <section className="py-10 px-6" id="how-it-works">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-4">Choose Your Path</h2>
@@ -33,7 +33,7 @@ export default function Landing() {
         ""
       )}
 
-      <section className="py-20 px-6 bg-muted/30" id="features">
+      <section className="py-10 px-6 bg-muted/30" id="features">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Why Choose VORKO?</h2>
@@ -76,10 +76,34 @@ export default function Landing() {
           </div>
         </div>
       </section>
+      <footer className="relative border-t border-[var(--border)] bg-[var(--surface-glass)] backdrop-blur-md py-12">
+        {/* Soft background gradient glow */}
+        <div
+          className="absolute inset-0 opacity-30 blur-3xl"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 0%, var(--highlight) 0%, transparent 70%)",
+          }}
+        />
 
-      <footer className="border-t py-12 px-6">
-        <div className="max-w-7xl mx-auto text-center text-muted-foreground">
-          <p>&copy; 2024 VORKO. All rights reserved.</p>
+        <div className="relative max-w-7xl mx-auto px-6 text-center flex flex-col items-center gap-6">
+          {/* Logo / Brand */}
+          <h2
+            className="text-2xl font-bold bg-gradient-to-r from-[var(--primary)] via-[var(--highlight)] to-[var(--secondary)]
+          bg-clip-text text-transparent tracking-wide"
+          >
+            VORKO
+          </h2>
+
+          {/* Divider line */}
+          <div className="h-px w-20 bg-gradient-to-r from-[var(--primary)] to-[var(--highlight)] opacity-60 my-1" />
+
+          {/* Copyright */}
+          <p className="text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()}{" "}
+            <span className="font-semibold text-foreground">VORKO</span>. All
+            rights reserved.
+          </p>
         </div>
       </footer>
     </div>

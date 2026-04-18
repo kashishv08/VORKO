@@ -96,6 +96,15 @@ export default function Onboarding() {
         // Reload Clerk user to refresh publicMetadata
         await user.reload();
 
+        const onboardUrl = userOnboard.completeOnboarding.stripeOnboardingUrl;
+        console.log(onboardUrl);
+
+        if (onboardUrl) {
+          // 👇 Redirect freelancer to Stripe onboarding page
+          window.location.href = onboardUrl;
+          return;
+        }
+
         // Redirect
         router.push(`/${role.toLowerCase()}/dashboard`);
       } else {
@@ -153,7 +162,7 @@ export default function Onboarding() {
                 />
                 <button
                   type="button"
-                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="cursor-pointer bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={addSkill}
                   disabled={loading}
                 >
@@ -173,7 +182,7 @@ export default function Onboarding() {
                     <button
                       type="button"
                       onClick={() => removeSkill(sk)}
-                      className="ml-1 text-lg hover:text-red-500"
+                      className="cursor-pointer ml-1 text-lg hover:text-red-500"
                       disabled={loading}
                     >
                       ×

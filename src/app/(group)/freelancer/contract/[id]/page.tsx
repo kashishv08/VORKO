@@ -11,14 +11,15 @@ import {
 } from "@/src/components/ui/tabs";
 import { CONTRACT_BY_ID } from "@/src/lib/gql/queries";
 import { gqlClient } from "@/src/lib/service/gql";
-import { User } from "@prisma/client";
+import { Contract, User } from "@prisma/client";
 import { Spinner } from "@radix-ui/themes";
-import { CreditCard, MessageSquare, Star } from "lucide-react";
+import { CreditCard, MessageSquare, Star, Video } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCalendarAlt, FaDollarSign } from "react-icons/fa";
 import { contract } from "../../../client/contract/page";
+import { MARK_PROJ_SUBMIT } from "@/src/lib/gql/mutation";
 
 function UserAvatar({
   name,
@@ -44,9 +45,10 @@ export default function ContractDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
-    if (showChat) {
+    if (showChat || showConfirmModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -55,7 +57,7 @@ export default function ContractDetailPage() {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [showChat]);
+  }, [showChat, showConfirmModal]);
 
   useEffect(() => {
     fetch("/api/currentUser")
@@ -131,10 +133,12 @@ export default function ContractDetailPage() {
             {contract.project.title}
           </h1>
           <span
-            className={`px-5 py-1.5 rounded-full text-sm font-semibold select-none ${
-              isActive
-                ? "bg-primary text-white shadow-glow"
-                : "bg-surfaceGlass text-muted"
+            className={`px-5 py-1.5 rounded-full text-sm font-semibold select-none bg-surfaceGlass ${
+              contract.status === "ACTIVE"
+                ? "text-white shadow-glow"
+                : contract.status === "REVIEW_PENDING"
+                ? "text-white"
+                : "text-white"
             }`}
           >
             {contract.status}
@@ -183,11 +187,25 @@ export default function ContractDetailPage() {
           </div>
         </div>
 
-        {/* Project Description */}
         <div>
-          <h2 className="text-xl font-bold mb-3 text-primary">
-            Project Description
-          </h2>
+          {/* Header Row (Heading + Button) */}
+          <div className="flex justify-between items-center mb-3 w-full">
+            <h2 className="text-xl font-bold text-primary">
+              Project Description
+            </h2>
+
+            {currentUser?.id === contract.freelancerId &&
+              !contract.workSubmitted && (
+                <Button
+                  className="cursor-pointer button-gradient font-semibold shadow-glow rounded-xl px-4 py-2 transition-all hover:scale-105"
+                  onClick={() => setShowConfirmModal(true)}
+                >
+                  Mark Work Submitted
+                </Button>
+              )}
+          </div>
+
+          {/* Description Below */}
           <p className="text-lg leading-relaxed text-muted">
             {contract.project.description}
           </p>
@@ -201,7 +219,7 @@ export default function ContractDetailPage() {
             {[
               { tab: "messages", label: "Messages", Icon: MessageSquare },
               { tab: "payments", label: "Payments", Icon: CreditCard },
-              { tab: "review", label: "Review", Icon: Star },
+              { tab: "meeting", label: "Meeting", Icon: Video },
             ].map(({ tab, label, Icon }) => (
               <TabsTrigger
                 key={tab}
@@ -272,34 +290,104 @@ export default function ContractDetailPage() {
               <p className="mb-5 text-muted text-lg">
                 Manage payment transactions securely.
               </p>
-              <Button
-                className="button-gradient"
-                onClick={() =>
-                  router.push(`/payments?contractId=${contract.id}`)
-                }
-              >
-                View Payments
-              </Button>
+
+              {contract.status === "ACTIVE" ||
+              contract.status === "REVIEW_PENDING" ? (
+                <p>
+                  Waiting for client to complete the contract before payment can
+                  be released.
+                </p>
+              ) : contract.status === "COMPLETED" &&
+                contract.paymentStatus !== "PAID" ? (
+                <p>
+                  Client needs to release the payment. You’ll be notified once
+                  it’s done.
+                </p>
+              ) : contract.paymentStatus === "PAID" ? (
+                <div className="p-4 bg-background rounded-lg shadow-inner">
+                  <p>✅ Payment Received</p>
+                  <p>
+                    Total Paid by Client: $
+                    {contract.amountPaid?.toLocaleString()}
+                  </p>
+                  <p>
+                    Platform Fee Deducted: $
+                    {contract.platformFee?.toLocaleString()}
+                  </p>
+                  <p>
+                    You Received: ${contract.freelancerAmount?.toLocaleString()}
+                  </p>
+                </div>
+              ) : contract.status === "CANCELLED" ? (
+                <p>This contract has been cancelled. No payments were made.</p>
+              ) : (
+                <p>Payment information is not available.</p>
+              )}
             </div>
           </TabsContent>
 
           {/* Review Tab */}
-          <TabsContent value="review">
+          <TabsContent value="meeting">
             <div className="rounded-2xl p-8 text-center bg-surface shadow transition-transform duration-300 hover:scale-[1.01]">
-              <Star className="h-14 w-14 text-primary mb-5 mx-auto animate-pulse" />
+              <Video className="h-14 w-14 text-primary mb-5 mx-auto animate-pulse" />
               <p className="mb-5 text-muted text-lg">
-                Leave a review after project completion.
+                Now view your project status through meeting.
               </p>
               <Button
-                className="button-gradient"
-                onClick={() => router.push(`/review?contractId=${contract.id}`)}
+                className="cursor-pointer button-gradient"
+                onClick={() => router.push(`/meeting/${contract.id}`)}
               >
-                Leave a Review
+                Join Meeting
               </Button>
             </div>
           </TabsContent>
         </Tabs>
       </div>
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs bg-black/50 animate-fadeIn">
+          <div className="bg-surface rounded-2xl shadow-xl p-8 max-w-sm w-full text-center relative">
+            <h2 className="text-xl font-bold text-foreground mb-4">
+              Confirm Submission
+            </h2>
+            <p className="text-muted mb-8">
+              Are you sure you want to mark this project as submitted? You won’t
+              be able to undo this action.
+            </p>
+            <div className="absolute bottom-4 right-4 flex gap-3">
+              <Button
+                variant="secondary"
+                className="cursor-pointer rounded-lg"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="cursor-pointer button-gradient rounded-lg"
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const res: { markWorkSubmitted: Contract } =
+                      await gqlClient.request(MARK_PROJ_SUBMIT, {
+                        id: contract.id,
+                      });
+                    setContract((prev) => ({
+                      ...prev!,
+                      status: res.markWorkSubmitted.status,
+                      workSubmitted: true,
+                    }));
+                  } finally {
+                    setLoading(false);
+                    setShowConfirmModal(false);
+                  }
+                }}
+                disabled={loading}
+              >
+                {loading ? "Submitting..." : "Yes, Submit"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

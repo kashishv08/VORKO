@@ -73,7 +73,7 @@ export default function MyProjectsPage() {
       >
         <div>
           <h1 className="text-3xl font-bold">All Active Projects</h1>
-          <p className="text-sm text-[var(--muted)] mt-1">
+          <p className="text-sm text-muted mt-1">
             Manage and explore projects available for freelancers.
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function MyProjectsPage() {
                     <h2 className="text-lg font-semibold mb-1">
                       {project.title}
                     </h2>
-                    <p className="text-sm text-[var(--muted)] line-clamp-2">
+                    <p className="text-sm text-muted line-clamp-2">
                       {project.description}
                     </p>
                   </div>
@@ -156,7 +156,7 @@ export default function MyProjectsPage() {
                       {project.status}
                     </span>
                     <p className="font-semibold">${project.budget}</p>
-                    <p className="text-xs text-[var(--muted)]">
+                    <p className="text-xs text-muted">
                       {formatDate(Number(project.deadline))}
                     </p>
                   </div>
@@ -166,7 +166,7 @@ export default function MyProjectsPage() {
           })}
         </motion.div>
       ) : (
-        <Text size="2" className="text-[var(--muted)]">
+        <Text size="2" className="text-muted">
           No active projects.
         </Text>
       )}

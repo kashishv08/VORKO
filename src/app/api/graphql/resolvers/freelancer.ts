@@ -6,7 +6,6 @@ import { StreamChat } from "stream-chat";
 //   process.env.STREAM_SECRET!
 // );
 
-// Helper to fetch your app's user by current session Clerk ID
 async function getCurrentUserFromDB() {
   const { userId } = await auth();
   // console.log("gql wala userid", userId);
@@ -87,7 +86,9 @@ export const getFreelancerActiveContracts = async () => {
 
   const contracts = await prismaClient.contract.findMany({
     where: {
-      status: "ACTIVE",
+      // status: {
+      //   in: ["ACTIVE", "REVIEW_PENDING"],
+      // },
       freelancerId: dbUser.id,
     },
     include: {
@@ -101,26 +102,73 @@ export const getFreelancerActiveContracts = async () => {
   return contracts;
 };
 
-// export const deliverWork = async (
-//   _: unknown,
-//   args: { contractId: string; submissionLink: string }
-// ) => {
-//   const contract = await prismaClient.contract.update({
-//     where: { id: args.contractId },
-//     data: {
-//       status: "REVIEW_PENDING",
-//       workSubmitted: true,
-//       submissionLink: args.submissionLink,
-//     },
-//     include: { client: true, freelancer: true },
-//   });
+export const freelancerDashboard = async () => {
+  const user = await getCurrentUserFromDB();
+  if (!user) throw new Error("Unauthorized");
 
-//   const channel = streamClient.channel("messaging", args.contractId);
-//   await channel.sendMessage({
-//     text: `Freelancer delivered the project for review.\n[View Submission](${args.submissionLink})`,
-//     user_id: contract.freelancer.id,
-//     type: "system",
-//   });
+  const activeProposalsCount = await prismaClient.proposal.count({
+    where: {
+      freelancerId: user.id,
+      status: {
+        in: ["SUBMITTED", "ACCEPTED"],
+      },
+    },
+  });
 
-//   return contract;
-// };
+  const activeContractsCount = await prismaClient.contract.count({
+    where: {
+      freelancerId: user.id,
+      status: "ACTIVE",
+    },
+  });
+
+  const totalProposalsCount = await prismaClient.proposal.count({
+    where: {
+      freelancerId: user.id,
+    },
+  });
+
+  const completedContracts = await prismaClient.contract.findMany({
+    where: {
+      freelancerId: user.id,
+      status: "COMPLETED",
+    },
+    include: {
+      project: true,
+    },
+  });
+
+  const totalEarnings = completedContracts.reduce(
+    (sum, contract) => sum + (contract.freelancerAmount || 0),
+    0
+  );
+
+  const latestProposals = await prismaClient.proposal.findMany({
+    where: { freelancerId: user.id },
+    include: { project: true },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  return {
+    stats: {
+      activeProposalsCount,
+      activeContractsCount,
+      totalProposalsCount,
+      totalEarnings,
+    },
+    latestProposals,
+  };
+};
+
+export const markWorkSubmitted = async (_: unknown, args: { id: string }) => {
+  const user = await getCurrentUserFromDB();
+  if (user?.role != "FREELANCER") return;
+  return prismaClient.contract.update({
+    where: { id: args.id },
+    data: {
+      workSubmitted: true,
+      status: "REVIEW_PENDING",
+    },
+  });
+};

@@ -21,6 +21,9 @@ model User {
   avatar             String?
   onboardingComplete Boolean  @default(false)
 
+  stripeAccountId     String?
+  stripeOnboardingUrl String?
+
   projects  Project[]  @relation("ClientProjects")
   proposals Proposal[]
 
@@ -76,6 +79,12 @@ enum ProposalStatus {
   REJECTED
 }
 
+enum paymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
 model Contract {
   id        String  @id @default(auto()) @map("_id") @db.ObjectId
   projectId String  @unique @db.ObjectId
@@ -87,14 +96,21 @@ model Contract {
   freelancerId String @db.ObjectId
   freelancer   User   @relation("FreelancerContracts", fields: [freelancerId], references: [id], onDelete: Cascade)
 
-  status         ContractStatus @default(ACTIVE)
-  workSubmitted  Boolean?       @default(false)
-  submissionLink String?
+  status        ContractStatus @default(ACTIVE)
+  workSubmitted Boolean?       @default(false)
+
+  stripePaymentIntentId String?
+  paymentStatus         paymentStatus? @default(PENDING)
+  amountPaid            Float?
+  platformFee           Float?
+  freelancerAmount      Float?
 
   createdAt   DateTime  @default(now())
   completedAt DateTime?
-  messages    Message[]
-  reviews     Review[]
+
+  messages Message[]
+  reviews  Review[]
+  meeting  Meeting?
 }
 
 enum ContractStatus {
@@ -102,7 +118,14 @@ enum ContractStatus {
   COMPLETED
   CANCELLED
   REVIEW_PENDING
-  REVISION_REQUESTED
+}
+
+model Meeting {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  contractId      String   @unique @db.ObjectId
+  contract        Contract @relation(fields: [contractId], references: [id])
+  streamMeetingId String   @unique
+  createdAt       DateTime @default(now())
 }
 
 model Message {

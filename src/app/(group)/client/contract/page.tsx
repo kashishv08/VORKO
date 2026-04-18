@@ -106,20 +106,16 @@ export default function ClientContractsPage() {
 
                 {/* Right: Actions */}
                 <div className="flex flex-col gap-4 mt-4 sm:mt-0">
+                  <span
+                    className={`px-5 py-1.5 rounded-full text-sm font-semibold select-none bg-surfaceGlass mt-2`}
+                  >
+                    {contract.status}
+                  </span>
                   <Link
                     href={`/client/contract/${contract.id}`}
                     className="button-gradient text-white font-semibold py-3 px-6 rounded-lg text-center"
                   >
                     View Contract
-                  </Link>
-                  <Link
-                    href={`/client/messages/${contract.id}`}
-                    className="inline-flex items-center gap-3 px-5 py-3 rounded-lg border border-border text-foreground bg-surface hover:bg-surface-glass transition-colors text-sm justify-center shadow"
-                  >
-                    Messages
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-xs font-bold">
-                      {contract.proposal?.length ?? 0}
-                    </span>
                   </Link>
                 </div>
               </div>

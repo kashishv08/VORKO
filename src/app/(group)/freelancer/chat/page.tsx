@@ -66,9 +66,9 @@ export default function ChatPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--background)] text-[var(--text-primary)]">
       {/* Sidebar (Desktop) */}
-      <div className="hidden md:flex w-80 flex-col backdrop-blur-lg bg-[var(--surface)]/70 border-r border-[var(--border)]">
-        <div className="p-5 border-b border-[var(--border)] flex items-center gap-2 text-[var(--accent)] font-semibold text-lg">
-          <FaComments className="text-[var(--accent)]" />
+      <div className="hidden md:flex w-80 flex-col backdrop-blur-lg bg-surface/70 border-r border-[var(--border)]">
+        <div className="p-5 border-b border-[var(--border)] flex items-center gap-2 text-acccent font-semibold text-lg">
+          <FaComments className="text-acccent" />
           Chats
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--border)] scrollbar-track-transparent">
@@ -112,9 +112,9 @@ export default function ChatPage() {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 flex md:hidden"
           >
-            <div className="w-72 bg-[var(--surface)]/90 backdrop-blur-xl border-r border-[var(--border)] flex flex-col">
+            <div className="w-72 bg-surface/90 backdrop-blur-xl border-r border-[var(--border)] flex flex-col">
               <div className="p-5 border-b border-[var(--border)] flex justify-between items-center">
-                <span className="text-[var(--accent)] font-semibold text-lg">
+                <span className="text-acccent font-semibold text-lg">
                   Chats
                 </span>
                 <button
@@ -163,11 +163,11 @@ export default function ChatPage() {
       </AnimatePresence>
 
       {/* Chat Area */}
-      <div className="flex-1 relative flex flex-col bg-[var(--surface)]/40 backdrop-blur-md">
+      <div className="flex-1 relative flex flex-col bg-surface/40 backdrop-blur-md">
         {/* Top bar */}
         <div className="md:hidden absolute top-4 left-4 z-30">
           <button
-            className="p-2 rounded-full bg-[var(--surface)]/60 text-[var(--text-primary)] shadow hover:bg-[var(--surface-hover)] transition"
+            className="p-2 rounded-full bg-surface/60 text-[var(--text-primary)] shadow hover:bg-[var(--surface-hover)] transition"
             onClick={() => setSidebarOpen(true)}
           >
             <FaBars />

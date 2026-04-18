@@ -26,7 +26,7 @@ export function Header() {
         <Link href="/">
           <span
             className={`text-2xl sm:text-2xl font-extrabold italic tracking-widest cursor-pointer 
-            text-[var(--accent)] dark:text-[var(--accent-dark)]
+            text-acccent dark:text-[var(--accent-dark)]
             px-2 transform transition-transform duration-500 ${
               logoHovered ? "rotate-3 scale-110" : "rotate-0 scale-100"
             }`}
@@ -48,7 +48,7 @@ export function Header() {
           {isLoaded ? (
             isSignedIn && user ? (
               <div className="relative pl-2">
-                <div className="rounded-[2rem] bg-[var(--surface)]/30 dark:bg-[var(--surface-dark)]/30 shadow-lg py-1 px-2 flex items-center gap-2 border border-[var(--border)] backdrop-blur-sm transition-all duration-300 hover:scale-[1.03]">
+                <div className="rounded-[2rem] bg-surface/30 dark:bg-[var(--surface-dark)]/30 shadow-lg py-1 px-2 flex items-center gap-2 border border-[var(--border)] backdrop-blur-sm transition-all duration-300 hover:scale-[1.03]">
                   <UserButton
                     appearance={{
                       elements: {
@@ -76,7 +76,7 @@ export function Header() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="cursor-pointer px-4 font-semibold transition-transform duration-300 hover:scale-105 hover:text-[var(--accent)]"
+                    className="cursor-pointer px-4 font-semibold transition-transform duration-300 hover:scale-105 hover:text-acccent"
                   >
                     Login
                   </Button>
@@ -113,7 +113,7 @@ function NavLink({
   return (
     <Link
       href={href}
-      className="relative py-1.5 px-3 rounded group transition-colors duration-300 hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-[var(--accent)]"
+      className="relative py-1.5 px-3 rounded group transition-colors duration-300 hover:text-acccent focus-visible:outline focus-visible:outline-[var(--accent)]"
     >
       <span className="transition-transform group-hover:scale-105">
         {children}

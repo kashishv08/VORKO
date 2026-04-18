@@ -30,7 +30,7 @@ export default async function ChatPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[var(--background)] via-[var(--surface)]/80 to-[var(--background)] text-[var(--text-primary)] transition-colors duration-500">
       {/* Page Header */}
-      <header className="px-6 md:px-10 py-4 border-b border-[var(--border)] backdrop-blur-xl bg-[var(--surface)]/60 shadow-sm sticky top-0 z-10 flex items-center justify-between">
+      <header className="px-6 md:px-10 py-4 border-b border-[var(--border)] backdrop-blur-xl bg-surface/60 shadow-sm sticky top-0 z-10 flex items-center justify-between">
         <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--primary)] bg-clip-text text-transparent">
           Chat Room
         </h1>

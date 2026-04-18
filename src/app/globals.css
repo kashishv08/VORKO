@@ -1,8 +1,20 @@
+@import "@stream-io/video-react-sdk/dist/css/styles.css";
 @import "tailwindcss";
 @import "@radix-ui/themes/styles.css";
 @import "tw-animate-css";
 @tailwind utilities;
 /* @import "stream-chat-react/dist/css/tailwind.css"; */
+
+:root {
+  --accent-9: rgba(
+    31,
+    125,
+    83,
+    0.5
+  ) !important; /* replaces Radix default blue */
+  --focus-color: rgba(31, 125, 83, 0.5) !important;
+  --accent-10: rgba(31, 125, 83, 0.6) !important;
+}
 
 /* ---------- Root variables ---------- */
 :root {
@@ -368,6 +380,41 @@ body {
   margin-right: 5px;
 }
 
+.str-chat__message-input
+  .str-chat__message-input-inner
+  .str-chat__message-textarea-container
+  .str-chat__message-textarea-with-emoji-picker
+  .str-chat__message-textarea {
+  color: var(--muted);
+}
+
+.str-chat__message-input
+  .str-chat__message-textarea-container:not(
+    :is(
+        :lang(ae),
+        :lang(ar),
+        :lang(arc),
+        :lang(bcc),
+        :lang(bqi),
+        :lang(ckb),
+        :lang(dv),
+        :lang(fa),
+        :lang(glk),
+        :lang(he),
+        :lang(ku),
+        :lang(mzn),
+        :lang(nqo),
+        :lang(pnb),
+        :lang(ps),
+        :lang(sd),
+        :lang(ug),
+        :lang(ur),
+        :lang(yi)
+      )
+  ) {
+  border: 1px solid var(--foreground);
+}
+
 /* ------------------ Dark theme adjustments ------------------ */
 .dark .str-chat {
   background: var(--background);
@@ -407,4 +454,240 @@ body {
 .dark .str-chat__file-input-button:hover {
   color: var(--accent);
   transform: scale(1.1);
+}
+
+/* 🌞 Light Theme */
+.str-video.light {
+  --str-video__primary-color: #1f7d53; /* soft green */
+  --str-video__secondary-color: #38a16f; /* bright accent */
+  --str-video__text-color1: #18230f;
+  --str-video__text-color2: #27391c;
+  --str-video__background-color1: var(--primary);
+  --str-video__background-color2: #e3e9de;
+  --str-video__border-color: rgba(31, 125, 83, 0.2);
+  --str-video__box-shadow: 0 6px 16px rgba(31, 125, 83, 0.2);
+}
+
+/* 🌚 Dark Theme */
+.str-video.dark {
+  --str-video__primary-color: #2ea36f; /* vivid green highlight */
+  --str-video__secondary-color: #1f7d53; /* deeper green tone */
+  --str-video__text-color1: #e6f6ec;
+  --str-video__text-color2: #9fcbb2;
+  --str-video__background-color1: #0d1a10;
+  --str-video__background-color2: #1f2d20;
+  --str-video__border-color: rgba(255, 255, 255, 0.06);
+  --str-video__box-shadow: 0 6px 16px rgba(46, 163, 111, 0.25);
+}
+
+.str-video__call-controls {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--str-video__border-color);
+  border-radius: 14px;
+  box-shadow: var(--str-video__box-shadow);
+}
+
+.str-video__video-placeholder {
+  background-color: var(--background);
+}
+
+.str-video__participant-view
+  .str-video__participant-details
+  .str-video__participant-details__name {
+  color: var(--background);
+}
+
+.str-video__participant-view
+  .str-video__participant-details
+  .str-video__participant-details__name
+  .str-video__participant-details__name--audio-muted,
+.str-video__participant-view
+  .str-video__participant-details
+  .str-video__participant-details__name
+  .str-video__participant-details__name--video-muted {
+  background-color: var(--accent);
+}
+.str-video__participant-view
+  .str-video__participant-details
+  .str-video__participant-details__name {
+  background-color: var(--muted);
+}
+
+/* video theme */
+
+/* ============================= */
+/* 🌱 GLOBAL THEME INTEGRATION   */
+/* ============================= */
+
+.str-video {
+  --str-video__primary-color: var(--primary);
+  --str-video__secondary-color: var(--secondary);
+  --str-video__highlight-color: var(--highlight);
+  --str-video__accent-color: var(--accent);
+
+  --str-video__text-color1: var(--foreground);
+  --str-video__text-color2: var(--muted);
+
+  --str-video__background-color1: var(--background);
+  --str-video__background-color2: var(--surface);
+  --str-video__background-glass: var(--surface-glass);
+
+  --str-video__border-color: var(--border);
+  --str-video__border-radius-circle: 16px;
+  --str-video__border-radius-md: 12px;
+
+  --str-video__box-shadow: 0 6px 16px var(--shadow);
+  --str-video__overlay-color: rgba(0, 0, 0, 0.35);
+}
+
+/* ============================= */
+/* 🌞 LIGHT THEME STYLING        */
+/* ============================= */
+
+.str-video.light {
+  --str-video__primary-color: var(--primary);
+  --str-video__secondary-color: var(--highlight);
+  --str-video__text-color1: var(--foreground);
+  --str-video__text-color2: var(--muted);
+
+  --str-video__background-color1: var(--background);
+  --str-video__background-color2: var(--surface);
+  --str-video__border-color: var(--border);
+  --str-video__box-shadow: 0 6px 16px var(--shadow);
+}
+
+/* ============================= */
+/* 🌚 DARK THEME STYLING         */
+/* ============================= */
+
+.str-video.dark {
+  --str-video__primary-color: var(--secondary);
+  --str-video__secondary-color: var(--highlight);
+  --str-video__text-color1: var(--foreground);
+  --str-video__text-color2: var(--muted);
+
+  --str-video__background-color1: var(--background);
+  --str-video__background-color2: var(--surface);
+  --str-video__border-color: var(--border);
+  --str-video__box-shadow: 0 8px 18px var(--shadow);
+}
+
+/* ============================= */
+/* 🎥 COMPONENT OVERRIDES        */
+/* ============================= */
+
+/* Call controls bar */
+.str-video__call-controls {
+  background: var(--surface-glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--str-video__box-shadow);
+  padding: 0.6rem 1rem;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.str-video__call-controls:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Buttons (mute, camera, leave, etc.) */
+.str-video button,
+.str-video__button {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  transition: all 0.25s ease-in-out;
+  box-shadow: 0 3px 8px rgba(31, 125, 83, 0.3);
+}
+
+.str-video button:hover,
+.str-video__button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(31, 125, 83, 0.4);
+  filter: brightness(1.1);
+}
+
+/* “Leave call” button */
+.str-video__button--leave {
+  background: linear-gradient(135deg, #b81d2b, #e43d3d);
+}
+
+/* Participant grid */
+.str-video__participant-view {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--str-video__box-shadow);
+  background: var(--str-video__background-color1);
+}
+
+/* Name tag under participant */
+.str-video__participant-details {
+  background-color: var(--surface-glass);
+  backdrop-filter: blur(6px);
+  color: var(--foreground);
+  font-weight: 500;
+  border-radius: 0 0 10px 10px;
+  padding: 0.25rem 0.5rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.str-video__participant-view .str-video__participant-details {
+  background-color: var(--muted);
+}
+
+.str-video__participant-details__name {
+  color: var(--foreground);
+}
+
+.str-video__participant-details__name--audio-muted,
+.str-video__participant-details__name--video-muted {
+  background-color: var(--surface);
+  color: #fff;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 0.85rem;
+}
+
+.str-video__participant-view
+  .str-video__participant-details
+  .str-video__participant-details__name
+  .str-video__participant-details__name--audio-muted,
+.str-video__participant-view
+  .str-video__participant-details
+  .str-video__participant-details__name
+  .str-video__participant-details__name--video-muted {
+  background-color: var(--surface);
+}
+
+/* Video placeholders */
+.str-video__video-placeholder {
+  background: var(--background);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Toasts, popups, and modals */
+.str-video__notification,
+.str-video__dialog {
+  background: var(--surface);
+  color: var(--foreground);
+  border-radius: 14px;
+  box-shadow: var(--str-video__box-shadow);
+  border: 1px solid var(--border);
+}
+
+/* ============================= */
+/* ✨ Subtle transitions          */
+/* ============================= */
+.str-video * {
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+.str-video__tooltip {
+  color: whitesmoke;
 }
