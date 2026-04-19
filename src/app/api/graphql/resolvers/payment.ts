@@ -48,12 +48,13 @@ export const processContractPayment = async (
       freelancerId: contract.freelancerId,
     },
     payment_intent_data: {
+      application_fee_amount: Math.round(platformFee * 100),
       transfer_data: {
         destination: contract.freelancer.stripeAccountId,
       },
     },
-    success_url: `https://feuilletonistic-rochelle-inconvincible.ngrok-free.dev/client/payment/success?contractId=${args.id}`,
-    cancel_url: `https://feuilletonistic-rochelle-inconvincible.ngrok-free.dev/client/payment/cancelled?contractId=${args.id}`,
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/client/payment/success?contractId=${args.id}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/client/payment/cancelled?contractId=${args.id}`,
   });
 
   //   console.log("triggered session", session);

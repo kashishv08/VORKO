@@ -116,7 +116,7 @@ export default function Features() {
                   scale: [1, 1.07],
                 }}
                 transition={{
-                  duration: 3.4 + Math.random(),
+                  duration: 3.4,
                   repeat: Infinity,
                   repeatType: "reverse",
                   ease: "easeInOut",

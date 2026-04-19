@@ -17,49 +17,53 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   const authPublic = ["/sign-in", "/sign-up", "/role-selection"];
-  const alwaysPublicPrefixes = ["/", "/favicon.ico", "/trpc", "/api"];
+  const alwaysPublicPrefixes = ["/favicon.ico", "/trpc", "/api"];
 
-  // Allow public routes
+  // 1. Allow strictly public assets/APIs
   if (alwaysPublicPrefixes.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next();
   }
 
-  // Check auth
   const { userId } = await auth();
+
+  // 2. Handle Non-Authenticated Users
   if (!userId) {
-    if (authPublic.includes(pathname)) return NextResponse.next();
+    const publicRoutes = ["/sign-in", "/sign-up", "/role-selection"];
+    const isPublic = pathname === "/" || publicRoutes.some((route) => pathname.startsWith(route));
+    
+    if (isPublic) return NextResponse.next();
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
 
-  // Skip SSO callback routes to prevent undefined metadata
+  // 3. Handle Authenticated Users
   if (pathname.includes("sso-callback")) {
     return NextResponse.next();
   }
 
-  // Get Clerk user
   const user = await clerkClient.users.getUser(userId);
   const publicMetadata = (user.publicMetadata ?? {}) as PublicMetadata;
 
-  // Fallback to query param role if metadata is undefined
   const roleParam = url.searchParams.get("role") as PublicMetadata["role"];
   const role = publicMetadata.role ?? roleParam;
   const lowerRole = role?.toLowerCase();
 
   const onboardingComplete = publicMetadata.onboardingComplete ?? false;
 
-  console.log(
-    "middleware publicMetadata:",
-    publicMetadata,
-    "role fallback:",
-    roleParam
-  );
+  // Add this line around line 46 in middleware.ts:
+  console.log("MIDDLEWARE CHECK:", { pathname, role, onboardingComplete });
 
-  // --- ONBOARDING LOGIC ---
-  if (!onboardingComplete && pathname !== "/onboarding") {
+
+
+  // --- ROLE & ONBOARDING ENFORCEMENT ---
+  if (!role && pathname !== "/role-selection") {
+    return NextResponse.redirect(new URL("/role-selection", req.url));
+  }
+
+  if (role && !onboardingComplete && pathname !== "/onboarding") {
     return NextResponse.redirect(new URL(`/onboarding?role=${role}`, req.url));
   }
 
-  if (onboardingComplete && pathname === "/onboarding") {
+  if (onboardingComplete && (pathname === "/onboarding" || pathname === "/role-selection")) {
     return NextResponse.redirect(new URL(`/${lowerRole}/dashboard`, req.url));
   }
 

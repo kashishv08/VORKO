@@ -152,7 +152,7 @@ export default function ProjectDetailPage() {
         return (
           <div className="flex items-center gap-2 text-emerald-500 bg-emerald-100/10 px-4 py-2 rounded-lg border border-emerald-400/20">
             <CheckCircle2 className="w-5 h-5" />
-            <span>Your proposal has been accepted.</span>
+            <span>Your proposal has been accepted.Vist the contract for submission</span>
           </div>
         );
       case "REJECTED":
@@ -338,8 +338,8 @@ export default function ProjectDetailPage() {
                   {isSubmitting
                     ? "Submitting..."
                     : proposalStatus
-                    ? "Update Proposal"
-                    : "Submit Proposal"}
+                      ? "Update Proposal"
+                      : "Submit Proposal"}
                 </button>
               </div>
             </motion.div>

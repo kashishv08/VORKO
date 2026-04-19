@@ -142,6 +142,7 @@ export const typeDefs = gql`
     amountPaid: Float
     platformFee: Float
     freelancerAmount: Float
+    checkoutUrl: String
     meeting: Meeting
   }
 

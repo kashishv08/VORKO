@@ -16,6 +16,13 @@ export function Header() {
   const { isSignedIn, user, isLoaded } = useUser();
   const publicMetadata = (user?.publicMetadata as UserPublicMetadata) ?? {};
   const role = publicMetadata.role?.toLowerCase() ?? "";
+  const onboardingComplete = publicMetadata.onboardingComplete ?? false;
+
+  const dashboardUrl = !role
+    ? "/role-selection"
+    : !onboardingComplete
+      ? `/onboarding?role=${role.toUpperCase()}`
+      : `/${role}/dashboard`;
 
   const [logoHovered, setLogoHovered] = useState(false);
 
@@ -27,9 +34,8 @@ export function Header() {
           <span
             className={`text-2xl sm:text-2xl font-extrabold italic tracking-widest cursor-pointer 
             text-acccent dark:text-[var(--accent-dark)]
-            px-2 transform transition-transform duration-500 ${
-              logoHovered ? "rotate-3 scale-110" : "rotate-0 scale-100"
-            }`}
+            px-2 transform transition-transform duration-500 ${logoHovered ? "rotate-3 scale-110" : "rotate-0 scale-100"
+              }`}
             onMouseEnter={() => setLogoHovered(true)}
             onMouseLeave={() => setLogoHovered(false)}
             style={{
@@ -60,19 +66,19 @@ export function Header() {
                     <UserButton.MenuItems>
                       <UserButton.Link
                         label="Dashboard"
-                        href={`/${role}/dashboard`}
+                        href={dashboardUrl}
                         labelIcon={<LayoutDashboard />}
                       />
                     </UserButton.MenuItems>
                   </UserButton>
                   <span className="hidden sm:inline text-[var(--text-primary)] font-semibold text-sm ml-1 transition-colors">
-                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                    {role ? role.charAt(0).toUpperCase() + role.slice(1) : "User"}
                   </span>
                 </div>
               </div>
             ) : (
               <div className="flex gap-2 sm:gap-3">
-                <Link href="/sign-in">
+                {/* <Link href="/sign-in">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -80,7 +86,7 @@ export function Header() {
                   >
                     Login
                   </Button>
-                </Link>
+                </Link> */}
                 <Link href="/role-selection">
                   <Button
                     size="sm"

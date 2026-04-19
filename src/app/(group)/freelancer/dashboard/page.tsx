@@ -23,6 +23,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { ProjectResponse } from "../../client/project/[id]/page";
 
 type dashboardType = {
   stats: {
@@ -53,7 +54,10 @@ export default function FreelancerDashboard() {
 
   useEffect(() => {
     const fetchEarnings = async () => {
-      const res = await gqlClient.request(EARNING_GRAPH);
+      interface EarningsGraphResponse {
+        earningsGraph: { month: string; total: number }[];
+      }
+      const res = await gqlClient.request<EarningsGraphResponse>(EARNING_GRAPH);
       console.log(res);
       setEarningsData(res.earningsGraph);
     };
@@ -189,56 +193,64 @@ export default function FreelancerDashboard() {
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Active Proposals</h3>
-              <Link
-                href="/freelancer/proposals"
-                className="text-[var(--primary)] text-sm hover:underline"
-              >
-                View All
-              </Link>
+              {proposals.length !== 0 && (
+                <Link
+                  href="/freelancer/proposals"
+                  className="text-[var(--primary)] text-sm hover:underline"
+                >
+                  View All
+                </Link>
+              )}
             </div>
 
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="text-muted text-xs uppercase tracking-wider">
-                  {["Project", "Bid", "Status", "Action"].map((head) => (
-                    <th key={head} className="pb-3">
-                      {head}
-                    </th>
+
+            {proposals.length === 0 ? (
+              <p className="text-center text-muted">No active proposals</p>
+            ) : (
+
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="text-muted text-xs uppercase tracking-wider">
+                    {["Project", "Bid", "Status", "Action"].map((head) => (
+                      <th key={head} className="pb-3">
+                        {head}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody
+                  className="divide-y"
+                  style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                >
+                  {proposals.map((p, idx) => (
+                    <motion.tr
+                      key={idx}
+                      whileHover={{ background: "rgba(31,125,83,0.06)" }}
+                      className="transition-colors"
+                    >
+                      <td className="py-4 font-medium">{p?.project?.title}</td>
+                      <td className="py-4">{p.amount}</td>
+                      <td className="py-4">{p.status}</td>
+                      <td className="py-4">
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          className="px-3 py-1 rounded-md text-sm font-medium"
+                          style={{
+                            background:
+                              "linear-gradient(90deg, var(--primary), var(--accent))",
+                            color: "#fff",
+                          }}
+                        >
+                          <Link href={`/freelancer/project/${p.project.id}`}>
+                            View
+                          </Link>
+                        </motion.button>
+                      </td>
+                    </motion.tr>
                   ))}
-                </tr>
-              </thead>
-              <tbody
-                className="divide-y"
-                style={{ borderColor: "rgba(255,255,255,0.06)" }}
-              >
-                {proposals.map((p, idx) => (
-                  <motion.tr
-                    key={idx}
-                    whileHover={{ background: "rgba(31,125,83,0.06)" }}
-                    className="transition-colors"
-                  >
-                    <td className="py-4 font-medium">{p?.project?.title}</td>
-                    <td className="py-4">{p.amount}</td>
-                    <td className="py-4">{p.status}</td>
-                    <td className="py-4">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        className="px-3 py-1 rounded-md text-sm font-medium"
-                        style={{
-                          background:
-                            "linear-gradient(90deg, var(--primary), var(--accent))",
-                          color: "#fff",
-                        }}
-                      >
-                        <Link href={`/freelancer/project/${p.project.id}`}>
-                          View
-                        </Link>
-                      </motion.button>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            )}
           </motion.section>
 
           {/* Analytics */}
@@ -255,19 +267,23 @@ export default function FreelancerDashboard() {
           >
             <h3 className="text-lg font-semibold">Analytics</h3>
             <div className="h-40">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={earningsData}>
-                  <XAxis dataKey="month" stroke="var(--muted)" fontSize={12} />
-                  <YAxis stroke="var(--muted)" fontSize={12} />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    stroke="var(--primary)"
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {earningsData.length === 0 ? (
+                <p className="text-center text-muted">No analytics data</p>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={earningsData}>
+                    <XAxis dataKey="month" stroke="var(--muted)" fontSize={12} />
+                    <YAxis stroke="var(--muted)" fontSize={12} />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="total"
+                      stroke="var(--primary)"
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </motion.section>
         </div>
@@ -289,7 +305,7 @@ export default function FreelancerDashboard() {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Messages</h3>
               <Link
-                href="/freelancer/messages"
+                href="/freelancer/chat"
                 className="text-[var(--primary)] text-sm hover:underline"
               >
                 View All

@@ -56,11 +56,15 @@ export const completeOnboarding = async (
     },
   });
 
+  // ✅ Fetch freshest user to avoid stale metadata overwrites
+  const freshUser = await clerkClient.users.getUser(user.id);
+
   // ✅ Update Clerk metadata
   await clerkClient.users.updateUser(user.id, {
     publicMetadata: {
-      ...user.publicMetadata,
+      ...freshUser.publicMetadata,
       onboardingComplete: true,
+      role: args.role,
       bio: args.bio,
       skills: args.skills,
       stripeAccountId,
@@ -71,8 +75,8 @@ export const completeOnboarding = async (
   if (args.role === "FREELANCER" && stripeAccountId) {
     const accountLink = await stripe.accountLinks.create({
       account: stripeAccountId,
-      refresh_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/refresh`,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/freelancer/dashboard`,
+      refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/onboarding/refresh`,
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/freelancer/dashboard`,
       type: "account_onboarding",
     });
 

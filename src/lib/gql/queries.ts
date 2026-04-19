@@ -53,6 +53,8 @@ export const GET_ONE_PROJECT = gql`
           clerkId
           name
           avatar
+          role
+          skills
         }
       }
       contract {

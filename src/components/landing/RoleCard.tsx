@@ -4,12 +4,34 @@ import { Role } from "@prisma/client";
 import { Briefcase, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
+import axios from "axios";
 
 export default function RoleCard() {
+  const { user, isLoaded } = useUser();
   const router = useRouter();
 
-  const handleRole = (role: Role) => {
-    router.push(`/sign-up?role=${role}`);
+  const handleRole = async (role: Role) => {
+    if (!isLoaded) return;
+
+    if (user) {
+      try {
+        const response = await axios.post("/api/check-role", {
+          clerkId: user.id,
+          role: role,
+          email: user.emailAddresses[0].emailAddress,
+          name: user.fullName || user.username || "User",
+        });
+
+        if (response.data.success) {
+          router.push(`/onboarding?role=${role}`);
+        }
+      } catch (err) {
+        console.error("Error setting role:", err);
+      }
+    } else {
+      router.push(`/sign-up?role=${role}`);
+    }
   };
 
   const roles = [

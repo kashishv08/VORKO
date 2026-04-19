@@ -100,13 +100,19 @@ export default function Onboarding() {
         console.log(onboardUrl);
 
         if (onboardUrl) {
-          // 👇 Redirect freelancer to Stripe onboarding page
+          // Redirect freelancer to Stripe onboarding page
           window.location.href = onboardUrl;
           return;
         }
 
+        debugger;
         // Redirect
-        router.push(`/${role.toLowerCase()}/dashboard`);
+        const role = (user?.publicMetadata?.role as string) || (queryRole as string) || "";
+        if (role) {
+          router.push(`/${role.toLowerCase()}/dashboard`);
+        } else {
+          router.push("/");
+        }
       } else {
         toast.error("Onboarding failed. Please try again.");
       }

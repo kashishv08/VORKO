@@ -1,6 +1,6 @@
 "use client";
 
-import { ACCEPT_PROPOSAL, PROJECT_PROPOSALS } from "@/src/lib/gql/queries";
+import { ACCEPT_PROPOSAL, GET_ONE_PROJECT, PROJECT_PROPOSALS } from "@/src/lib/gql/queries";
 import { REJECT_PROPOSAL } from "@/src/lib/gql/mutation";
 import { gqlClient } from "@/src/lib/service/gql";
 import { Project, Proposal, User } from "@prisma/client";
@@ -11,35 +11,44 @@ import { FaDollarSign, FaCalendarAlt, FaCheck, FaTimes } from "react-icons/fa";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-type ProposalType = (Proposal & { project: Project & { client: User } } & {
+type ProposalType = (Proposal & {
   freelancer: User;
 })[];
 
+export interface ProjectResponse {
+  getProjectById: Project & {
+    client: User;
+    proposals: (Proposal & { freelancer: User })[];
+  };
+}
+
 export default function ProjectPage() {
   const { id } = useParams();
+  const [project, setProject] = useState<ProjectResponse["getProjectById"] | null>(null);
   const [proposals, setProposals] = useState<ProposalType>([]);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Fetch proposals
+  // Fetch project and proposals
   useEffect(() => {
-    const fetchProposals = async () => {
+    const fetchProjectData = async () => {
       setLoading(true);
       try {
-        const res: { viewProposal: ProposalType } = await gqlClient.request(
-          PROJECT_PROPOSALS,
-          { projectId: id }
-        );
-        setProposals(res.viewProposal || []);
+
+        const res = await gqlClient.request<ProjectResponse>(GET_ONE_PROJECT, { id });
+        if (res.getProjectById) {
+          setProject(res.getProjectById);
+          setProposals(res.getProjectById.proposals || []);
+        }
       } catch (err) {
-        console.error("Error fetching proposals:", err);
-        toast.error("Failed to fetch proposals.");
+        console.error("Error fetching project data:", err);
+        toast.error("Failed to fetch project details.");
       } finally {
         setLoading(false);
       }
     };
-    fetchProposals();
+    fetchProjectData();
   }, [id]);
 
   const onAcceptProposal = async (proposalId: string) => {
@@ -50,16 +59,27 @@ export default function ProjectPage() {
         { proposalId }
       );
       if (res.acceptProposal) {
+        // ✅ Update the standalone project state
+        if (project) {
+          setProject((prev: ProjectResponse["getProjectById"] | null) =>
+            prev ? { ...prev, status: "HIRED" } : null
+          );
+        }
+
         setProposals((prev) =>
-          prev.map((p) =>
-            p.id === proposalId
-              ? {
-                  ...p,
-                  status: "ACCEPTED",
-                  project: { ...p.project, status: "HIRED" },
-                }
-              : p
-          )
+          prev.map((p) => {
+            if (p.id === proposalId) {
+              return {
+                ...p,
+                status: "ACCEPTED",
+              };
+            }
+            // Mark all other proposals as REJECTED locally
+            return {
+              ...p,
+              status: "REJECTED",
+            };
+          })
         );
         toast.success("Proposal accepted & project hired!");
       }
@@ -101,7 +121,6 @@ export default function ProjectPage() {
       day: "numeric",
     });
 
-  const project = proposals[0]?.project;
 
   return (
     <div className="min-h-screen bg-background text-foreground py-12 px-6 md:px-12 transition-colors duration-300">
@@ -226,13 +245,12 @@ export default function ProjectPage() {
                         </div>
 
                         <span
-                          className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                            proposal.status === "ACCEPTED"
-                              ? "bg-[var(--highlight)]/20 text-[var(--highlight)]"
-                              : proposal.status === "REJECTED"
+                          className={`px-2 py-1 text-xs font-semibold rounded-full ${proposal.status === "ACCEPTED"
+                            ? "bg-[var(--highlight)]/20 text-[var(--highlight)]"
+                            : proposal.status === "REJECTED"
                               ? "bg-red-200/20 text-red-500"
                               : "bg-[var(--primary)]/15 text-[var(--primary)]"
-                          }`}
+                            }`}
                         >
                           {proposal.status}
                         </span>
@@ -243,7 +261,7 @@ export default function ProjectPage() {
                         {expanded === proposal.id
                           ? proposal.coverLetter
                           : proposal.coverLetter?.slice(0, 120) +
-                            (proposal.coverLetter?.length > 120 ? "..." : "")}
+                          (proposal.coverLetter?.length > 120 ? "..." : "")}
                         {proposal.coverLetter?.length > 120 && (
                           <button
                             className="ml-2 text-[var(--primary)] text-xs hover:underline cursor-pointer"
@@ -271,11 +289,10 @@ export default function ProjectPage() {
                           <div className="flex gap-3">
                             <motion.button
                               whileTap={{ scale: 0.95 }}
-                              className={`cursor-pointer inline-flex items-center gap-1 px-4 py-1.5 rounded-md text-white text-xs font-semibold shadow-glow transition ${
-                                actionLoading === proposal.id
-                                  ? "bg-gray-400 cursor-not-allowed"
-                                  : "bg-[var(--primary)] hover:bg-[var(--primary-dark)]"
-                              }`}
+                              className={`cursor-pointer inline-flex items-center gap-1 px-4 py-1.5 rounded-md text-white text-xs font-semibold shadow-glow transition ${actionLoading === proposal.id
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-[var(--primary)] hover:bg-[var(--primary-dark)]"
+                                }`}
                               onClick={() => onAcceptProposal(proposal.id)}
                               disabled={actionLoading === proposal.id}
                             >
@@ -284,11 +301,10 @@ export default function ProjectPage() {
 
                             <motion.button
                               whileTap={{ scale: 0.95 }}
-                              className={`cursor-pointer inline-flex items-center gap-1 px-4 py-1.5 rounded-md text-white text-xs font-semibold shadow transition ${
-                                actionLoading === proposal.id
-                                  ? "bg-gray-400 cursor-not-allowed"
-                                  : "bg-red-500 hover:bg-red-600"
-                              }`}
+                              className={`cursor-pointer inline-flex items-center gap-1 px-4 py-1.5 rounded-md text-white text-xs font-semibold shadow transition ${actionLoading === proposal.id
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-red-500 hover:bg-red-600"
+                                }`}
                               onClick={() => onRejectProposal(proposal.id)}
                               disabled={actionLoading === proposal.id}
                             >
