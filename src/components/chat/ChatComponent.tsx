@@ -5,7 +5,7 @@ import { gqlClient } from "@/src/lib/service/gql";
 import { User } from "@prisma/client";
 import { Spinner } from "@radix-ui/themes";
 import { useEffect, useRef, useState } from "react";
-import { StreamChat } from "stream-chat";
+import { StreamChat, Channel as StreamChannel } from "stream-chat";
 import {
   Channel,
   Chat,
@@ -16,9 +16,15 @@ import {
 import "stream-chat-react/dist/css/v2/index.css";
 import { useTheme } from "../context/ThemeContext";
 
+interface ChatUser {
+  id: string;
+  name: string;
+  avatar?: string | null;
+}
+
 interface ChatComponentProps {
-  user: User;
-  otherUser: User;
+  user: ChatUser;
+  otherUser: ChatUser;
   contractId: string;
   projectName: string;
 }
@@ -32,7 +38,7 @@ export default function ChatComponent({
   contractId,
   projectName,
 }: ChatComponentProps) {
-  const [channel, setChannel] = useState<any>(null);
+  const [channel, setChannel] = useState<StreamChannel | null>(null);
   const [ready, setReady] = useState(false);
   const { theme } = useTheme();
   const mountedRef = useRef(true);
@@ -55,10 +61,15 @@ export default function ChatComponent({
           );
         }
 
+        interface ChatChannelData {
+          name: string;
+          members: string[];
+        }
+
         const ch = client.channel("messaging", contractId, {
           name: `Contract Chat`,
           members: [user.id, otherUser.id],
-        });
+        } as ChatChannelData);
 
         await ch.watch();
 
@@ -75,12 +86,16 @@ export default function ChatComponent({
 
     return () => {
       mountedRef.current = false;
+    };
+  }, [user, otherUser, contractId]);
+
+  useEffect(() => {
+    return () => {
       if (channel) {
         channel.stopWatching().catch(console.error);
       }
-      // Do NOT disconnect client immediately if other instances are using it
     };
-  }, [user, otherUser, contractId]);
+  }, [channel]);
 
   if (!ready || !channel)
     return (
@@ -97,7 +112,7 @@ export default function ChatComponent({
           <Window>
             {/* Custom Header */}
 
-            <div className="h-[10%] w-full self-start px-4 py-3 border-b border-[var(--border)] bg-gradient-to-r from-[var(--accent)]/30 to-[var(--surface)]/60 backdrop-blur-md">
+            {/* <div className="h-[10%] w-full self-start px-4 py-3 border-b border-[var(--border)] bg-gradient-to-r from-[var(--accent)]/30 to-[var(--surface)]/60 backdrop-blur-md">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[var(--accent)] text-[var(--on-accent)] flex items-center justify-center font-bold">
                   {otherUser.name.charAt(0).toUpperCase()}
@@ -111,11 +126,11 @@ export default function ChatComponent({
                   </p>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Message List */}
             <div className="h-[71%] p-0 overflow-auto">
-              <div className="shadow-inner bg-surface/50 backdrop-blur-sm border border-[var(--border)] p-0 h-full">
+              <div className="shadow-inner bg-surface/50 backdrop-blur-sm p-0 h-full">
                 <MessageList />
               </div>
             </div>

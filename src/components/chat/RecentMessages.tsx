@@ -12,14 +12,18 @@ type ChatMessage = {
   createdAt: string;
 };
 
-export default function RecentMessages() {
+type RecentMessagesProps = {
+  onData?: (hasData: boolean) => void;
+};
+
+export default function RecentMessages({ onData }: RecentMessagesProps) {
   const [recentChats, setRecentChats] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // ✅ Step 1: Get current logged-in user
+        // Step 1: Get current logged-in user
         const res = await fetch("/api/currentUser");
         const user = await res.json();
 
@@ -29,15 +33,25 @@ export default function RecentMessages() {
           return;
         }
 
-        // ✅ Step 2: Call your GraphQL query
-        const data = await gqlClient.request(RECENT_CHAT, { userId: user.id });
+        // Step 2: Call your GraphQL query
+        const data: {
+          getRecentMessages: {
+            contractId: string;
+            projectName: string;
+            otherUser: { name: string };
+            lastMessageId?: string;
+            lastMessageText?: string;
+            lastMessageSender?: string;
+            lastMessageCreatedAt?: string;
+          }[];
+        } = await gqlClient.request(RECENT_CHAT, { userId: user.id });
 
         const chats = data?.getRecentMessages || [];
 
-        // ✅ Step 3: Map messages to display format
+        // Step 3: Map messages to display format
         const formatted = chats
-          .filter((chat: any) => chat.lastMessageText)
-          .map((chat: any) => ({
+          .filter((chat) => chat.lastMessageText)
+          .map((chat) => ({
             id: chat.lastMessageId || chat.contractId,
             text: chat.lastMessageText || "",
             userName:
@@ -51,6 +65,7 @@ export default function RecentMessages() {
           .slice(0, 5); // only show top 5
 
         setRecentChats(formatted);
+        if (onData) onData(formatted.length > 0);
       } catch (error) {
         console.error("Error loading recent messages:", error);
       } finally {
@@ -59,10 +74,10 @@ export default function RecentMessages() {
     };
 
     fetchData();
-  }, []);
+  }, [onData]);
 
   if (loading)
-    return <p className="text-sm text-muted">Loading recent chats...</p>;
+    return <p className="text-sm text-gray-500">Loading recent chats...</p>;
 
   return (
     <div className="flex flex-col gap-4">
@@ -89,7 +104,7 @@ export default function RecentMessages() {
           </motion.div>
         ))
       ) : (
-        <p className="text-sm text-muted">No recent messages</p>
+        <p className="text-sm text-gray-500">No recent messages</p>
       )}
     </div>
   );

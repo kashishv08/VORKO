@@ -126,10 +126,13 @@ export const MARK_PROJ_COMPLETED = gql`
 `;
 
 export const MARK_PROJ_SUBMIT = gql`
-  mutation MarkWorkSubmitted($id: String!) {
-    markWorkSubmitted(id: $id) {
+  mutation MarkWorkSubmitted($id: String!, $workDescription: String, $deliverableUrl: String) {
+    markWorkSubmitted(id: $id, workDescription: $workDescription, deliverableUrl: $deliverableUrl) {
       id
       status
+      workSubmitted
+      workDescription
+      deliverableUrl
     }
   }
 `;

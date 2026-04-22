@@ -55,6 +55,7 @@ export default async function ChatPage({ params }: { params: { id: string } }) {
             user={user}
             otherUser={otherUser}
             contractId={contract.id}
+            projectName={contract.project?.title ?? "Untitled Project"}
           />
         </Suspense>
       </main>

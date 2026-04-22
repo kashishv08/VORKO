@@ -110,11 +110,17 @@ export const getRecentMessages = async () => {
     const otherUser =
       user.id === contract.clientId ? contract.freelancer : contract.client;
 
+    interface ChatChannelData {
+      name: string;
+      members: string[];
+      created_by_id: string;
+    }
+
     const channel = serverClient.channel("messaging", contract.id, {
       name: `Chat for ${contract.project.title}`,
       members: [user.id, otherUser.id],
       created_by_id: user.id,
-    });
+    } as ChatChannelData);
 
     await channel.watch();
 

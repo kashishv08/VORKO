@@ -1,79 +1,82 @@
 "use client";
 
-import RecentMessages from "@/src/components/chat/RecentMessages";
-import { useTheme } from "@/src/components/context/ThemeContext";
-import { EditProfile } from "@/src/components/EditProfile";
+import { useEffect, useState } from "react";
+import { StatCard } from "@/components/ui/StatCard";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { SkeletonStatCard } from "@/components/ui/SkeletonCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { EARNING_GRAPH, FREELANCER_DASHBOARD } from "@/src/lib/gql/queries";
 import { gqlClient } from "@/src/lib/service/gql";
-import type { User } from "@clerk/backend";
-import { useUser } from "@clerk/nextjs";
-import type { UserResource as ClerkUser } from "@clerk/types";
-import { Project, Proposal } from "@prisma/client";
-import { Spinner } from "@radix-ui/themes";
-import type { Variants } from "framer-motion";
-import { motion } from "framer-motion";
-import Image from "next/image";
+import { DollarSign, FileText, Clock, CheckCircle, ArrowRight, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { ProjectResponse } from "../../client/project/[id]/page";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import RecentMessages from "@/src/components/chat/RecentMessages";
+import { useUser } from "@clerk/nextjs";
 
-type dashboardType = {
+type DashboardData = {
   stats: {
     activeProposalsCount: number;
     activeContractsCount: number;
-    totalProposalsCount: number;
+    totalCompletedContractsCount: number;
     totalEarnings: number;
   };
-  latestProposals: (Proposal & { project: Project & { client: User } })[];
+  latestProposals: {
+    id: string;
+    amount: number;
+    status: string;
+    project: {
+      id: string;
+      title: string;
+      client: {
+        name: string;
+      }
+    }
+  }[];
+  recentContracts: {
+    id: string;
+    status: string;
+    amountPaid: number;
+    freelancerAmount: number;
+    project: {
+      id: string;
+      title: string;
+    }
+  }[];
 };
 
-export default function FreelancerDashboard() {
+type EarningPoint = {
+  month: string;
+  total: number;
+};
+
+export default function FreelancerDashboardPage() {
   const { user } = useUser();
-  const { theme } = useTheme();
-  const [dashboard, setdashboard] = useState<dashboardType>();
-  const [proposals, setProposals] = useState<
-    (Proposal & { project: Project })[]
-  >([]);
-  const [loading, setLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<ClerkUser | null>(
-    user ?? null
-  );
-  // console.log(user);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [earningsData, setEarningsData] = useState<EarningPoint[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [earningsData, setEarningsData] = useState<
-    { month: string; total: number }[]
-  >([]);
-
-  useEffect(() => {
-    const fetchEarnings = async () => {
-      interface EarningsGraphResponse {
-        earningsGraph: { month: string; total: number }[];
-      }
-      const res = await gqlClient.request<EarningsGraphResponse>(EARNING_GRAPH);
-      console.log(res);
-      setEarningsData(res.earningsGraph);
-    };
-    fetchEarnings();
-  }, []);
+  const [hasChats, setHasChats] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
-        const data: { freelancerDashboard: dashboardType } =
-          await gqlClient.request(FREELANCER_DASHBOARD);
-        setdashboard(data?.freelancerDashboard);
-        setProposals(data?.freelancerDashboard?.latestProposals);
-      } catch (err) {
-        console.error("Error loading dashboard:", err);
+        const [dashRes, earningsRes] = (await Promise.all([
+          gqlClient.request(FREELANCER_DASHBOARD),
+          gqlClient.request(EARNING_GRAPH),
+        ])) as [{ freelancerDashboard: DashboardData }, { earningsGraph: EarningPoint[] }];
+        const fallbackData = Array.from({ length: 6 }, (_, i) => {
+          const d = new Date();
+          d.setMonth(d.getMonth() - (5 - i));
+          return {
+            month: d.toLocaleString('default', { month: 'short' }),
+            total: 0
+          };
+        });
+
+        setData(dashRes.freelancerDashboard);
+        setEarningsData(earningsRes.earningsGraph?.length ? earningsRes.earningsGraph : fallbackData);
+      } catch (error) {
+        console.error("Error fetching freelancer dashboard:", error);
       } finally {
         setLoading(false);
       }
@@ -81,324 +84,169 @@ export default function FreelancerDashboard() {
     fetchData();
   }, []);
 
-  // console.log("dash", dashboard);
-
-  const fadeUp: Variants = {
-    hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-  };
-
-  const stats = [
-    {
-      label: "Active Proposals",
-      value: `${dashboard?.stats.activeProposalsCount}`,
-    },
-    {
-      label: "Active Contracts",
-      value: `${dashboard?.stats.activeContractsCount}`,
-    },
-    {
-      label: "Total Proposals",
-      value: `${dashboard?.stats.totalProposalsCount}`,
-    },
-    { label: "Total Earnings", value: `${dashboard?.stats.totalEarnings}` },
-  ];
-
-  const meetings = [
-    {
-      title: "Kickoff Call with Vivaan",
-      time: "Tomorrow, 10:00 AM",
-      icon: "📹",
-    },
-  ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Spinner size="3" />
-      </div>
-    );
-  }
-
   return (
-    <div
-      className="flex min-h-screen"
-      style={{ background: "var(--background)", color: "var(--foreground)" }}
-    >
-      <main className="flex-1 p-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex justify-between items-center mb-10"
-        >
-          <div>
-            <h2 className="text-3xl font-bold">
-              Welcome back, {user?.firstName || "Freelancer"} 👋
-            </h2>
-            <p className="text-sm text-muted mt-1">
-              Here’s what’s happening with your work.
-            </p>
-          </div>
-        </motion.div>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Dashboard</h1>
+          <p className="text-sm text-slate-500 mt-1 font-medium">Your work overview at a glance.</p>
+        </div>
+        <div className="hidden md:flex items-center gap-2 text-[10px] font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full uppercase tracking-wider">
+          <TrendingUp size={12} />
+          <span>Top Rated Potential</span>
+        </div>
+      </div>
 
-        {/* Stats Grid */}
-        <motion.div
-          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10"
-          initial="hidden"
-          animate="visible"
-          variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
-        >
-          {stats.map((stat, i) => (
-            <motion.div
-              key={i}
-              variants={fadeUp}
-              whileHover={{
-                y: -6,
-                boxShadow: "0 12px 25px rgba(31,125,83,0.15)",
-              }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              className="rounded-xl p-6 text-center transform-gpu"
-              style={{
-                background:
-                  theme === "light"
-                    ? "linear-gradient(180deg, var(--surface), rgba(255,255,255,0.9))"
-                    : "linear-gradient(180deg, var(--surface), rgba(31,31,31,0.8))",
-                border: "1px solid rgba(255,255,255,0.06)",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <p className="text-3xl font-semibold text-[var(--primary)]">
-                {stat.value}
-              </p>
-              <p className="text-sm mt-1 text-muted">{stat.label}</p>
-            </motion.div>
-          ))}
-        </motion.div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)
+        ) : (
+          <>
+            <StatCard
+              label="Total Earnings"
+              value={`$${(data?.stats.totalEarnings ?? 0).toLocaleString()}`}
+              icon={DollarSign}
+              iconColor="text-green-600"
+            />
+            <StatCard
+              label="Active Contracts"
+              value={data?.stats.activeContractsCount ?? 0}
+              icon={FileText}
+              iconColor="text-blue-600"
+            />
+            <StatCard
+              label="Accepted Proposals"
+              value={data?.stats.activeProposalsCount ?? 0}
+              icon={Clock}
+              iconColor="text-yellow-600"
+            />
+            <StatCard
+              label="Completed Contracts"
+              value={data?.stats.totalCompletedContractsCount ?? 0}
+              icon={CheckCircle}
+              iconColor="text-emerald-600"
+            />
+          </>
+        )}
+      </div>
 
-        {/* Row 1: Proposals + Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Active Proposals */}
-          <motion.section
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="lg:col-span-2 rounded-xl p-6"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Active Proposals</h3>
-              {proposals.length !== 0 && (
-                <Link
-                  href="/freelancer/proposals"
-                  className="text-[var(--primary)] text-sm hover:underline"
-                >
-                  View All
-                </Link>
-              )}
-            </div>
-
-
-            {proposals.length === 0 ? (
-              <p className="text-center text-muted">No active proposals</p>
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white border border-border rounded-xl p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900 mb-4">Earnings Over Time</h2>
+          <div className="h-[200px] w-full">
+            {loading ? (
+              <div className="w-full h-full bg-slate-50 animate-pulse rounded-lg" />
             ) : (
-
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="text-muted text-xs uppercase tracking-wider">
-                    {["Project", "Bid", "Status", "Action"].map((head) => (
-                      <th key={head} className="pb-3">
-                        {head}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody
-                  className="divide-y"
-                  style={{ borderColor: "rgba(255,255,255,0.06)" }}
-                >
-                  {proposals.map((p, idx) => (
-                    <motion.tr
-                      key={idx}
-                      whileHover={{ background: "rgba(31,125,83,0.06)" }}
-                      className="transition-colors"
-                    >
-                      <td className="py-4 font-medium">{p?.project?.title}</td>
-                      <td className="py-4">{p.amount}</td>
-                      <td className="py-4">{p.status}</td>
-                      <td className="py-4">
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          className="px-3 py-1 rounded-md text-sm font-medium"
-                          style={{
-                            background:
-                              "linear-gradient(90deg, var(--primary), var(--accent))",
-                            color: "#fff",
-                          }}
-                        >
-                          <Link href={`/freelancer/project/${p.project.id}`}>
-                            View
-                          </Link>
-                        </motion.button>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={earningsData}>
+                  <defs>
+                    <linearGradient id="earnings" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(131, 88%, 33%)" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="hsl(131, 88%, 33%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                    formatter={(v: number) => [`$${v.toLocaleString()}`, "Earned"]}
+                  />
+                  <Area type="monotone" dataKey="total" stroke="hsl(131, 88%, 33%)" strokeWidth={2} fillOpacity={1} fill="url(#earnings)" />
+                </AreaChart>
+              </ResponsiveContainer>
             )}
-          </motion.section>
-
-          {/* Analytics */}
-          <motion.section
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="rounded-xl p-6 flex flex-col gap-6"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <h3 className="text-lg font-semibold">Analytics</h3>
-            <div className="h-40">
-              {earningsData.length === 0 ? (
-                <p className="text-center text-muted">No analytics data</p>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={earningsData}>
-                    <XAxis dataKey="month" stroke="var(--muted)" fontSize={12} />
-                    <YAxis stroke="var(--muted)" fontSize={12} />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      stroke="var(--primary)"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </motion.section>
+          </div>
         </div>
 
-        {/* Row 2: Messages + Meetings + Edit Profile */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Messages */}
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="rounded-xl p-6"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Messages</h3>
-              <Link
-                href="/freelancer/chat"
-                className="text-[var(--primary)] text-sm hover:underline"
-              >
-                View All
+        <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-slate-900">Quick Chat</h2>
+            {hasChats && (
+              <Link href="/freelancer/chat" className="text-sm font-bold text-primary hover:underline">
+                View all
               </Link>
-            </div>
-            <RecentMessages />
-          </motion.div>
+            )}
+          </div>
+          <div className="min-h-[200px]">
+            <RecentMessages onData={setHasChats} />
+          </div>
+        </div>
+      </div>
 
-          {/* Meetings */}
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="rounded-xl p-6 flex flex-col gap-4"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-semibold">Meetings</h3>
+      <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-slate-900">Recent Contracts</h2>
+          <Link href="/freelancer/contract" className="text-sm font-bold text-primary hover:underline flex items-center gap-1">
+            View all <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-12 bg-slate-50 rounded-lg animate-pulse" />)}
+          </div>
+        ) : !data?.recentContracts.length ? (
+          <EmptyState
+            icon={FileText}
+            title="No contracts yet"
+            description="Submit proposals to projects you're interested in."
+            action={{ label: "Browse Projects", onClick: () => window.location.href = "/freelancer/project" }}
+          />
+        ) : (
+          <div className="space-y-2">
+            {data.recentContracts.map((contract) => (
               <Link
-                href="/freelancer/meetings"
-                className="text-[var(--primary)] text-sm hover:underline"
+                key={contract.id}
+                href={`/freelancer/contract/${contract.id}`}
+                className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors group border border-transparent hover:border-slate-100"
               >
-                View All
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900 truncate group-hover:text-primary transition-colors">{contract.project?.title || "Project Title"}</p>
+                  <p className="text-xs font-medium text-slate-500 mt-0.5">${(contract.freelancerAmount || 0).toLocaleString()}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <StatusBadge status={contract.status} />
+                  <ArrowRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                </div>
               </Link>
-            </div>
-
-            {meetings.map((m, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center"
-                  style={{
-                    background: "var(--accent)",
-                    color: "#fff",
-                  }}
-                >
-                  {m.icon}
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{m.title}</p>
-                  <p className="text-xs text-muted">{m.time}</p>
-                </div>
-              </div>
             ))}
+          </div>
+        )}
+      </div>
 
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              className="w-full py-2 rounded-lg font-medium shadow-md"
-              style={{
-                background:
-                  "linear-gradient(90deg, var(--primary), var(--accent))",
-                color: "#fff",
-              }}
-            >
-              Join Meeting
-            </motion.button>
-          </motion.div>
-
-          {/* Edit Profile */}
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="rounded-xl p-6 flex flex-col items-center justify-center text-center gap-4"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <div>
-              <Image
-                height={100}
-                width={100}
-                src={user?.imageUrl || "/user.png"}
-                alt="avatar"
-                className="w-16 h-16 rounded-full object-cover"
-              />
+      <div className="grid lg:grid-cols-1 gap-6">
+        <div className="lg:col-span-2 bg-white border border-border rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-slate-900">Recent Proposals</h2>
+            <Link href="/freelancer/project" className="text-sm font-bold text-primary hover:underline">Find Work</Link>
+          </div>
+          {loading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-12 bg-slate-50 rounded-lg animate-pulse" />)}
             </div>
-            <h4 className="font-semibold text-lg">
-              {currentUser?.fullName || user?.fullName}
-            </h4>
-            <p className="text-sm text-muted">
-              {user?.primaryEmailAddress?.emailAddress ||
-                "freelancer@email.com"}
-            </p>
-            <EditProfile setCurrentUser={setCurrentUser} />
-          </motion.div>
+          ) : !data?.latestProposals.length ? (
+            <p className="text-sm text-slate-500 py-4">No active proposals found.</p>
+          ) : (
+            <div className="space-y-2">
+              {data.latestProposals.map((proposal) => (
+                <div key={proposal.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 truncate">{proposal.project.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Bid: ${proposal.amount.toLocaleString()} • Client: {proposal.project.client.name}</p>
+                  </div>
+                  <StatusBadge status={proposal.status} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

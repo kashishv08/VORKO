@@ -10,6 +10,12 @@ export const CLIENT_PROJ = gql`
       deadline
       status
       createdAt
+      contract {
+        status
+      }
+      proposals {
+        id
+      }
       client {
         id
         name
@@ -42,6 +48,8 @@ export const GET_ONE_PROJECT = gql`
         avatar
         bio
         skills
+        totalProjects
+        hiringRate
       }
       proposals {
         id
@@ -58,6 +66,7 @@ export const GET_ONE_PROJECT = gql`
         }
       }
       contract {
+        id
         status
         freelancer {
           name
@@ -176,6 +185,8 @@ export const CONTRACT_BY_ID = gql`
       freelancerId
       createdAt
       workSubmitted
+      workDescription
+      deliverableUrl
       freelancerAmount
       platformFee
       amountPaid
@@ -255,6 +266,7 @@ export const GET_FREELANCER_CONTRACT = gql`
 export const CLIENT_DASHBOARD = gql`
   query ClientDashboard {
     clientDashboard {
+      activeProjectsCount
       activeContractsCount
       proposalsPendingCount
       activeProjects {
@@ -265,8 +277,15 @@ export const CLIENT_DASHBOARD = gql`
         deadline
         status
         createdAt
+        contract {
+          status
+        }
       }
       totalspent
+      analytics {
+        month
+        total
+      }
     }
   }
 `;
@@ -275,6 +294,7 @@ export const FREELANCER_DASHBOARD = gql`
   query FreelancerDashboard {
     freelancerDashboard {
       latestProposals {
+        id
         amount
         status
         project {
@@ -285,10 +305,21 @@ export const FREELANCER_DASHBOARD = gql`
           }
         }
       }
+      recentContracts {
+        id
+        status
+        createdAt
+        amountPaid
+        freelancerAmount
+        project {
+          id
+          title
+        }
+      }
       stats {
         activeProposalsCount
         activeContractsCount
-        totalProposalsCount
+        totalCompletedContractsCount
         totalEarnings
       }
     }

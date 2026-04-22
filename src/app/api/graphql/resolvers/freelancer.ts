@@ -104,13 +104,14 @@ export const getFreelancerActiveContracts = async () => {
 
 export const freelancerDashboard = async () => {
   const user = await getCurrentUserFromDB();
+  console.log(user);
   if (!user) throw new Error("Unauthorized");
 
   const activeProposalsCount = await prismaClient.proposal.count({
     where: {
       freelancerId: user.id,
       status: {
-        in: ["SUBMITTED", "ACCEPTED"],
+        in: ["ACCEPTED"],
       },
     },
   });
@@ -122,9 +123,10 @@ export const freelancerDashboard = async () => {
     },
   });
 
-  const totalProposalsCount = await prismaClient.proposal.count({
+  const totalCompletedContractsCount = await prismaClient.contract.count({
     where: {
       freelancerId: user.id,
+      status: "COMPLETED",
     },
   });
 
@@ -145,7 +147,20 @@ export const freelancerDashboard = async () => {
 
   const latestProposals = await prismaClient.proposal.findMany({
     where: { freelancerId: user.id },
-    include: { project: true },
+    include: {
+      project: {
+        include: {
+          client: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  const recentContracts = await prismaClient.contract.findMany({
+    where: { freelancerId: user.id },
+    include: { project: true, client: true },
     orderBy: { createdAt: "desc" },
     take: 5,
   });
@@ -154,14 +169,15 @@ export const freelancerDashboard = async () => {
     stats: {
       activeProposalsCount,
       activeContractsCount,
-      totalProposalsCount,
+      totalCompletedContractsCount,
       totalEarnings,
     },
     latestProposals,
+    recentContracts,
   };
 };
 
-export const markWorkSubmitted = async (_: unknown, args: { id: string }) => {
+export const markWorkSubmitted = async (_: unknown, args: { id: string, workDescription?: string, deliverableUrl?: string }) => {
   const user = await getCurrentUserFromDB();
   if (user?.role != "FREELANCER") return;
   return prismaClient.contract.update({
@@ -169,6 +185,8 @@ export const markWorkSubmitted = async (_: unknown, args: { id: string }) => {
     data: {
       workSubmitted: true,
       status: "REVIEW_PENDING",
+      workDescription: args.workDescription,
+      deliverableUrl: args.deliverableUrl,
     },
   });
 };

@@ -1,10 +1,11 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { clerkClient } from "./lib/service/clerk";
+import { clerkClient } from "@clerk/nextjs/server";
 
 type PublicMetadata = {
   onboardingComplete?: boolean;
   role?: "FREELANCER" | "CLIENT";
+  stripeConnected?: boolean;
 };
 
 export default clerkMiddleware(async (auth, req) => {
@@ -40,7 +41,8 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.next();
   }
 
-  const user = await clerkClient.users.getUser(userId);
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
   const publicMetadata = (user.publicMetadata ?? {}) as PublicMetadata;
 
   const roleParam = url.searchParams.get("role") as PublicMetadata["role"];
@@ -48,6 +50,7 @@ export default clerkMiddleware(async (auth, req) => {
   const lowerRole = role?.toLowerCase();
 
   const onboardingComplete = publicMetadata.onboardingComplete ?? false;
+  const stripeConnected = publicMetadata.stripeConnected ?? false;
 
   // Add this line around line 46 in middleware.ts:
   console.log("MIDDLEWARE CHECK:", { pathname, role, onboardingComplete });
@@ -55,12 +58,27 @@ export default clerkMiddleware(async (auth, req) => {
 
 
   // --- ROLE & ONBOARDING ENFORCEMENT ---
+  if (pathname === "/") return NextResponse.next();
+
   if (!role && pathname !== "/role-selection") {
     return NextResponse.redirect(new URL("/role-selection", req.url));
   }
 
   if (role && !onboardingComplete && pathname !== "/onboarding") {
     return NextResponse.redirect(new URL(`/onboarding?role=${role}`, req.url));
+  }
+
+  if (
+    role === "FREELANCER" &&
+    onboardingComplete &&
+    !stripeConnected &&
+    pathname.startsWith("/freelancer") &&
+    !pathname.includes("/onboarding/stripe") &&
+    url.searchParams.get("synced") !== "true"
+  ) {
+    return NextResponse.redirect(
+      new URL("/freelancer/onboarding/stripe", req.url)
+    );
   }
 
   if (onboardingComplete && (pathname === "/onboarding" || pathname === "/role-selection")) {

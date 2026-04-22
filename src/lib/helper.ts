@@ -23,7 +23,7 @@ export const getCurrentUserFromDB = async () => {
 // export const getUserFromCookie = async (): Promise<usertype | null> => {
 //   try {
 //     const cookie = await cookies();
-//     const token = cookie.get("vorkoToken")?.value;
+//     const token = cookie.get("lancifyToken")?.value;
 //     if (!token) return null;
 //     const data = verifyToken(token);
 //     if (!data?.id) {

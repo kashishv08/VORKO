@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { WebhookEvent } from "@clerk/nextjs/server";
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { prismaClient } from "@/src/lib/service/prisma";
+import { Role } from "@prisma/client";
 import { clerkClient } from "@/src/lib/service/clerk";
 
 export async function POST(req: NextRequest) {
@@ -13,13 +15,13 @@ export async function POST(req: NextRequest) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET!;
   const wh = new Webhook(WEBHOOK_SECRET);
 
-  let evt;
+  let evt: WebhookEvent;
   try {
     evt = wh.verify(payload, {
       "svix-id": svix_id!,
       "svix-timestamp": svix_timestamp!,
       "svix-signature": svix_signature!,
-    });
+    }) as WebhookEvent;
   } catch (err) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     const email = email_addresses?.[0]?.email_address ?? "";
     const name = ((first_name || "") + " " + (last_name || "")).trim();
-    const role = unsafe_metadata?.role ?? public_metadata?.role ?? null;
+    const role = (unsafe_metadata?.role ?? public_metadata?.role ?? null) as Role;
 
     if (!role) {
       console.warn("User created without role; skipping DB creation");

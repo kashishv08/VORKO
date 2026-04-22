@@ -20,9 +20,7 @@ export default function Landing() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-4">Choose Your Path</h2>
-              <p className="text-lg text-muted-foreground">
-                Whether youre hiring or looking for work, VORKO has you covered
-              </p>
+                Whether youre hiring or looking for work, Lancify has you covered
             </div>
             <div className="w-full">
               <RoleCard />
@@ -36,7 +34,7 @@ export default function Landing() {
       <section className="py-10 px-6 bg-muted/30" id="features">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Why Choose VORKO?</h2>
+            <h2 className="text-4xl font-bold mb-4">Why Choose Lancify?</h2>
             <p className="text-lg text-muted-foreground">
               Everything you need for successful freelancing
             </p>
@@ -92,7 +90,7 @@ export default function Landing() {
             className="text-2xl font-bold bg-gradient-to-r from-[var(--primary)] via-[var(--highlight)] to-[var(--secondary)]
           bg-clip-text text-transparent tracking-wide"
           >
-            VORKO
+            Lancify
           </h2>
 
           {/* Divider line */}
@@ -101,7 +99,7 @@ export default function Landing() {
           {/* Copyright */}
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()}{" "}
-            <span className="font-semibold text-foreground">VORKO</span>. All
+            <span className="font-semibold text-foreground">Lancify</span>. All
             rights reserved.
           </p>
         </div>

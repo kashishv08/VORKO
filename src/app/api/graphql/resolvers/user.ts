@@ -1,5 +1,5 @@
 import { getCurrentUserFromDB } from "@/src/lib/helper";
-import { clerkClient } from "@/src/lib/service/clerk";
+import { clerkClient } from "@clerk/nextjs/server";
 import { prismaClient } from "@/src/lib/service/prisma";
 import stripe from "@/src/lib/service/stripe";
 import { currentUser } from "@clerk/nextjs/server";
@@ -44,7 +44,7 @@ export const completeOnboarding = async (
     stripeAccountId = account.id;
   }
 
-  // ✅ Save updates
+  // Save updates
   const updatedUser = await prismaClient.user.update({
     where: { clerkId: user.id },
     data: {
@@ -56,11 +56,12 @@ export const completeOnboarding = async (
     },
   });
 
-  // ✅ Fetch freshest user to avoid stale metadata overwrites
-  const freshUser = await clerkClient.users.getUser(user.id);
+  // Fetch freshest user to avoid stale metadata overwrites
+  const client = await clerkClient();
+  const freshUser = await client.users.getUser(user.id);
 
-  // ✅ Update Clerk metadata
-  await clerkClient.users.updateUser(user.id, {
+  // Update Clerk metadata
+  await client.users.updateUser(user.id, {
     publicMetadata: {
       ...freshUser.publicMetadata,
       onboardingComplete: true,
@@ -68,15 +69,16 @@ export const completeOnboarding = async (
       bio: args.bio,
       skills: args.skills,
       stripeAccountId,
+      stripeConnected: false,
     },
   });
 
-  // ✅ If freelancer, create an onboarding link
+  //  If freelancer, create an onboarding link
   if (args.role === "FREELANCER" && stripeAccountId) {
     const accountLink = await stripe.accountLinks.create({
       account: stripeAccountId,
-      refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/onboarding/refresh`,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/freelancer/dashboard`,
+      refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/freelancer/onboarding/stripe`,
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/freelancer/dashboard?synced=true`,
       type: "account_onboarding",
     });
 
@@ -104,7 +106,8 @@ export const editProfile = async (
     });
     if (!dbUser) throw new Error("User not found in database.");
 
-    const clerkUser = await clerkClient.users.getUser(dbUser.clerkId);
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(dbUser.clerkId);
     // console.log(clerkUser);
 
     const [firstName, ...lastNameParts] = (
@@ -114,7 +117,7 @@ export const editProfile = async (
     ).split(" ");
     const lastName = lastNameParts.join(" ");
 
-    await clerkClient.users.updateUser(dbUser.clerkId, {
+    await client.users.updateUser(dbUser.clerkId, {
       firstName: (args.name ? firstName : clerkUser.firstName) ?? undefined,
       lastName: (args.name ? lastName : clerkUser.lastName) ?? undefined,
       publicMetadata: {

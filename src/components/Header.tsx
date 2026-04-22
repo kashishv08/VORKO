@@ -6,6 +6,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import Link from "next/link";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { LayoutDashboard } from "lucide-react";
+import { LancifyLogo } from "./LancifyLogo";
 
 export type UserPublicMetadata = {
   role?: "FREELANCER" | "CLIENT";
@@ -30,22 +31,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-[var(--background)]/80 shadow-md border-b border-[var(--border)] transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
         {/* Logo */}
-        <Link href="/">
-          <span
-            className={`text-2xl sm:text-2xl font-extrabold italic tracking-widest cursor-pointer 
-            text-acccent dark:text-[var(--accent-dark)]
-            px-2 transform transition-transform duration-500 ${logoHovered ? "rotate-3 scale-110" : "rotate-0 scale-100"
-              }`}
-            onMouseEnter={() => setLogoHovered(true)}
-            onMouseLeave={() => setLogoHovered(false)}
-            style={{
-              textShadow: "0 2px 15px var(--accent)/40",
-              letterSpacing: "0.16em",
-            }}
-          >
-            VORKO
-          </span>
-        </Link>
+        <LancifyLogo />
 
         {/* User Section */}
         <div className="flex items-center gap-3 ml-4 cursor-poniter">

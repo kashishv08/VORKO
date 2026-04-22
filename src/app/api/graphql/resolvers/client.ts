@@ -2,6 +2,7 @@ import { getCurrentUserFromDB } from "@/src/lib/helper";
 import { prismaClient } from "@/src/lib/service/prisma";
 import { currentUser } from "@clerk/nextjs/server";
 import { StreamChat } from "stream-chat";
+import { type Prisma } from "@prisma/client";
 
 // const streamClient = StreamChat.getInstance(
 //   process.env.NEXT_PUBLIC_STREAM_API_KEY!,
@@ -262,64 +263,137 @@ export const clientDashboard = async () => {
     },
   });
 
-  const activeProjects = await prismaClient.project.findMany({
-    where: { clientId: user.id },
-    include: { proposals: true, contract: true },
-    orderBy: { createdAt: "desc" },
-    take: 5,
+  const activeProjectsCount = await prismaClient.project.count({
+    where: { clientId: user.id, status: "OPEN" }
   });
 
-  const completedContracts = await prismaClient.contract.findMany({
+  const allProjects = await prismaClient.project.findMany({
+    where: { clientId: user.id },
+    include: { proposals: true, contract: true },
+    orderBy: [
+      { status: 'asc' }, // This might not work as intended for custom sort, I'll handling sorting in code or use multiple queries if needed.
+      { createdAt: 'desc' }
+    ],
+    take: 10,
+  });
+
+  // Since prisma sort on enum might be alphabetically, I'll do a simple JS sort to put OPEN first
+  const activeProjects = allProjects.sort((a, b) => {
+    if (a.status === 'OPEN' && b.status !== 'OPEN') return -1;
+    if (a.status !== 'OPEN' && b.status === 'OPEN') return 1;
+    return 0;
+  }).slice(0, 5);
+
+  const allSpentContracts = await prismaClient.contract.findMany({
     where: {
       clientId: user.id,
-      status: "COMPLETED",
+      paymentStatus: "PAID",
+    },
+    select: {
+      amountPaid: true,
+      completedAt: true,
     },
   });
 
-  // console.log(completedContracts);
-
-  const totalspent = completedContracts.reduce(
+  const totalspent = allSpentContracts.reduce(
     (sum, contract) => sum + (contract.amountPaid || 0),
     0
   );
 
+  // Group by month for analytics (last 6 months)
+  const grouped: Record<string, number> = {};
+  const last6Months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    return d.toISOString().slice(0, 7);
+  }).reverse();
+
+  last6Months.forEach(m => grouped[m] = 0);
+
+  allSpentContracts.forEach((c) => {
+    if (c.completedAt) {
+      const month = c.completedAt.toISOString().slice(0, 7);
+      if (grouped[month] !== undefined) {
+        grouped[month] += c.amountPaid || 0;
+      }
+    }
+  });
+
+  const analytics = Object.entries(grouped)
+    .map(([month, total]) => {
+      const monthName = new Date(month + "-01").toLocaleString('default', { month: 'short' });
+      return { month: monthName, total };
+    })
+    .sort((a, b) => {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return months.indexOf(a.month) - months.indexOf(b.month);
+    });
+
   return {
     activeProjects,
+    activeProjectsCount,
     activeContractsCount,
     proposalsPendingCount,
     totalspent,
+    analytics
   };
 };
 
 export const completeContract = async (_: unknown, args: { id: string }) => {
   const user = await getCurrentUserFromDB();
   if (user?.role != "CLIENT") return;
-  return prismaClient.contract.update({
+  const contract = await prismaClient.contract.update({
     where: { id: args.id },
-    data: { status: "COMPLETED" },
+    data: { status: "COMPLETED", completedAt: new Date() },
   });
+
+  await prismaClient.project.update({
+    where: { id: contract.projectId },
+    data: { status: "CLOSED" }
+  });
+
+  return contract;
 };
 
 export const earningsGraph = async () => {
+  const user = await getCurrentUserFromDB();
+  if (!user) throw new Error("Unauthorized");
+
+  const where: Prisma.ContractWhereInput = {
+    paymentStatus: "PAID",
+    completedAt: { not: null }
+  };
+
+  if (user.role === "FREELANCER") {
+    where.freelancerId = user.id;
+  } else {
+    where.clientId = user.id;
+  }
+
   const contracts = await prismaClient.contract.findMany({
-    where: { paymentStatus: "PAID", completedAt: { not: null } },
+    where,
     select: {
       completedAt: true,
-      project: {
-        select: { budget: true },
-      },
+      amountPaid: true,
+      freelancerAmount: true,
     },
   });
 
-  // group by month in JS
   const grouped: Record<string, number> = {};
 
   contracts.forEach((c) => {
     const month = c.completedAt!.toISOString().slice(0, 7);
-    grouped[month] = (grouped[month] || 0) + c.project.budget;
+    const amount = user.role === "FREELANCER" ? (c.freelancerAmount || 0) : (c.amountPaid || 0);
+    grouped[month] = (grouped[month] || 0) + amount;
   });
 
   return Object.entries(grouped)
-    .map(([month, total]) => ({ month, total }))
-    .sort((a, b) => a.month.localeCompare(b.month));
+    .map(([month, total]) => {
+      const monthName = new Date(month + "-01").toLocaleString('default', { month: 'short' });
+      return { month: monthName, total };
+    })
+    .sort((a, b) => {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return months.indexOf(a.month) - months.indexOf(b.month);
+    });
 };

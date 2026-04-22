@@ -31,7 +31,7 @@ export function Hero() {
           className="text-5xl md:text-6xl font-bold text-white mb-6"
           data-testid="text-hero-title"
         >
-          Welcome to VORKO
+          Welcome to Lancify
         </h1>
         <p
           className="text-xl md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto"

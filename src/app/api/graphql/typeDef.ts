@@ -39,7 +39,7 @@ export const typeDefs = gql`
       bio: String
       skills: [String!]
     ): User!
-    markWorkSubmitted(id: String!): Contract!
+    markWorkSubmitted(id: String!, workDescription: String, deliverableUrl: String): Contract!
     completeContract(id: String!): Contract!
     processContractPayment(id: String!): Contract!
   }
@@ -52,20 +52,23 @@ export const typeDefs = gql`
   type stateType {
     activeProposalsCount: Int!
     activeContractsCount: Int!
-    totalProposalsCount: Int!
+    totalCompletedContractsCount: Int!
     totalEarnings: Float!
   }
 
   type FreelancerDashboard {
     stats: stateType
     latestProposals: [Proposal!]!
+    recentContracts: [Contract!]!
   }
 
   type ClientDashboard {
     activeProjects: [Project!]!
+    activeProjectsCount: Int!
     activeContractsCount: Int!
     proposalsPendingCount: Int!
     totalspent: Float!
+    analytics: [Graph]!
   }
 
   type UserChat {
@@ -137,6 +140,8 @@ export const typeDefs = gql`
     status: ContractStatus
     createdAt: String
     workSubmitted: Boolean
+    workDescription: String
+    deliverableUrl: String
     stripePaymentIntentId: String
     paymentStatus: String
     amountPaid: Float
@@ -172,5 +177,7 @@ export const typeDefs = gql`
     stripeAccountId: String
     stripeOnboardingUrl: String
     onboardingComplete: Boolean
+    totalProjects: Int
+    hiringRate: Int
   }
 `;

@@ -1,7 +1,7 @@
 "use client";
 
 import { Role } from "@prisma/client";
-import { Briefcase, User } from "lucide-react";
+import { Briefcase, User, Check, ArrowRight, Shield, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
@@ -36,126 +36,93 @@ export default function RoleCard() {
 
   const roles = [
     {
-      title: "Join as Client",
+      title: "I want to Hire",
+      subtitle: "Launch projects and find talent.",
       icon: Briefcase,
-      description: "Post projects and hire talented freelancers.",
+      description: "Post projects and discover world-class freelancers to help you scale your vision.",
       features: [
-        "Post unlimited projects",
-        "Review freelancer proposals",
-        "Secure payment processing",
-        "Real-time communication",
+        "Post high-impact projects",
+        "Review curated professional bids",
+        "Secured escrow payments",
+        "Dedicated project management hub",
       ],
       role: "CLIENT" as Role,
+      accent: "text-blue-500",
+      bg: "bg-blue-50",
     },
     {
-      title: "Join as Freelancer",
+      title: "I want to Work",
+      subtitle: "Find opportunities and grow.",
       icon: User,
-      description: "Discover opportunities and expand your enterprise.",
+      description: "Discover high-paying projects that match your expertise and expand your client base.",
       features: [
-        "Browse available projects",
-        "Submit competitive proposals",
-        "Build your portfolio",
-        "Get paid securely",
+        "Browse exclusive project listings",
+        "Build a verified professional profile",
+        "Guaranteed payment protection",
+        "Instant communication with clients",
       ],
       role: "FREELANCER" as Role,
+      accent: "text-emerald-500",
+      bg: "bg-emerald-50",
     },
   ];
 
   return (
-    <section className="py-16 relative overflow-hidden">
-      {/* Soft background glow */}
-      <div
-        className="absolute inset-0 blur-3xl opacity-30"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 30%, var(--highlight) 0%, transparent 70%)",
-        }}
-      />
-
-      <div className="relative z-5 max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-10 justify-center items-center">
-        {roles.map((card, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: index * 0.2 }}
-            className={`
-              group relative w-full max-w-sm
-              bg-[var(--surface-glass)]
-              border border-[var(--border)]
-              rounded-2xl
-              p-10
-              text-center
-              shadow-[0_8px_25px_var(--shadow)]
-              backdrop-blur-md
-              transition-all duration-500
-              hover:shadow-[0_12px_40px_var(--shadow)]
-              hover:translate-y-[-6px]
-              hover:border-[var(--highlight)]
-            `}
+    <div className="flex flex-col lg:flex-row gap-8 w-full max-w-5xl mx-auto items-stretch">
+      {roles.map((card, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: index * 0.1 }}
+          className="flex-1"
+        >
+          <div
+            className={`group relative h-full flex flex-col bg-white border border-border rounded-[2.5rem] p-10 hover:shadow-2xl hover:border-primary/20 transition-all duration-500 cursor-default overflow-hidden`}
           >
-            {/* Animated background glow */}
-            <div
-              className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-20 transition-all duration-700"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--primary), var(--highlight), var(--secondary))",
-                filter: "blur(20px)",
-              }}
-            />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
 
-            {/* Icon container */}
-            <div
-              className="relative mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl 
-                bg-gradient-to-br from-[var(--primary)] to-[var(--highlight)]
-                shadow-[0_4px_16px_rgba(46,163,111,0.25)]
-                text-white transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6"
-            >
-              <card.icon className="h-8 w-8" />
+            <div className="flex items-center justify-between mb-8">
+              <div className={`w-16 h-16 rounded-[1.5rem] ${card.bg} flex items-center justify-center ${card.accent} shadow-sm border border-black/5 group-hover:scale-110 transition-transform`}>
+                <card.icon size={32} />
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-black text-slate-400 uppercase tracking-widest px-3 py-1 bg-slate-50 rounded-full border border-slate-100">
+                <Shield size={12} />
+                Verified Account
+              </div>
             </div>
 
-            {/* Title */}
-            <h2
-              className="text-2xl font-semibold mb-3 
-              bg-gradient-to-r from-[var(--primary)] via-[var(--highlight)] to-[var(--secondary)]
-              bg-clip-text text-transparent"
-            >
-              {card.title}
-            </h2>
+            <div className="mb-8">
+              <h2 className="text-3xl font-black text-slate-900 mb-2">{card.title}</h2>
+              <p className="text-lg font-bold text-primary">{card.subtitle}</p>
+            </div>
 
-            {/* Description */}
-            <p className="text-sm text-muted mb-6">{card.description}</p>
+            <p className="text-slate-500 font-medium leading-relaxed mb-8 flex-1">
+              {card.description}
+            </p>
 
-            {/* Feature list */}
-            <ul className="text-left space-y-2 mb-8">
+            <div className="space-y-4 mb-10">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Platform Benefits</p>
               {card.features.map((feature, i) => (
-                <li key={i} className="flex items-center gap-2 text-foreground">
-                  <span className="text-[var(--highlight)] font-bold">✓</span>
-                  <span className="text-sm">{feature}</span>
-                </li>
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    <Check size={12} strokeWidth={4} />
+                  </div>
+                  <span className="text-sm font-bold text-slate-600">{feature}</span>
+                </div>
               ))}
-            </ul>
+            </div>
 
-            {/* CTA Button */}
             <button
               onClick={() => handleRole(card.role)}
-              className="relative w-full py-3 rounded-xl font-semibold
-                text-white text-base
-                bg-gradient-to-r from-[var(--primary)] via-[var(--highlight)] to-[var(--secondary)]
-                shadow-[0_6px_20px_rgba(46,163,111,0.4)]
-                transition-all duration-300
-                hover:shadow-[0_10px_35px_rgba(46,163,111,0.5)]
-                hover:translate-y-[-2px]
-                active:scale-95
-                focus:outline-none
-              "
+              className="w-full py-4 rounded-2xl bg-slate-900 text-white font-bold text-lg hover:bg-primary transition-all shadow-xl shadow-slate-900/10 hover:shadow-primary/20 flex items-center justify-center gap-2 group/btn transform active:scale-95"
             >
-              Continue as {card.role === "CLIENT" ? "Client" : "Freelancer"} →
+              Get Started
+              <ArrowRight size={20} className="group-hover/btn:translate-x-1 transition-transform" />
             </button>
-          </motion.div>
-        ))}
-      </div>
-    </section>
+          </div>
+        </motion.div>
+      ))}
+    </div>
   );
 }

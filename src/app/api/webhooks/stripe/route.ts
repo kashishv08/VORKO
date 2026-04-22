@@ -24,9 +24,10 @@ export async function POST(req: Request) {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err: any) {
-    console.error("Webhook signature error:", err.message);
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("Webhook signature error:", error.message);
+    return new Response(`Webhook Error: ${error.message}`, { status: 400 });
   }
 
   try {
@@ -64,14 +65,57 @@ export async function POST(req: Request) {
         }
         const contractId = session.metadata.contractId;
 
+        const contract = await prismaClient.contract.findUnique({
+          where: { id: contractId },
+        });
+        if (!contract) {
+          throw new Error("Contract not found");
+        }
+
         await prismaClient.contract.update({
           where: { id: contractId },
-          data: { paymentStatus: "PAID", status: "COMPLETED" },
+          data: {
+            paymentStatus: "PAID",
+            status: "COMPLETED"
+          },
         });
 
         console.log(
           `Contract ${contractId} marked as PAID via Checkout Session.`
         );
+        break;
+      }
+
+      case "account.updated": {
+        const account = event.data.object as Stripe.Account;
+        if (account.details_submitted) {
+          const user = await prismaClient.user.findFirst({
+            where: { stripeAccountId: account.id },
+          });
+
+          if (user) {
+            await prismaClient.user.update({
+              where: { id: user.id },
+              data: { stripeConnected: true },
+            });
+
+            // Update Clerk metadata
+            const { clerkClient } = await import("@clerk/nextjs/server");
+            const client = await clerkClient();
+            if (user?.clerkId) {
+              const clerkUser = await client.users.getUser(user.clerkId);
+              const publicMetadata = (clerkUser?.publicMetadata ?? {}) as UserPublicMetadata;
+              await client.users.updateUser(user.clerkId, {
+                publicMetadata: {
+                  ...publicMetadata,
+                  stripeConnected: true,
+                },
+              });
+            }
+
+            console.log(`User ${user.id} marked as stripeConnected.`);
+          }
+        }
         break;
       }
 
