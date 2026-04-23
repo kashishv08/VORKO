@@ -46,13 +46,13 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
       <div className="mb-8 flex flex-col items-center">
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <LancifyLogo />
         </div>
         {/* <h1 className="text-2xl font-semibold text-slate-900">Create an account</h1> */}
-        <p className="text-slate-500 mt-1">
+        {/* <p className="text-slate-500 mt-1">
           Join Lancify as a <span className="text-primary font-bold">{role?.toLowerCase() || "user"}</span>
-        </p>
+        </p> */}
       </div>
 
       <div className="w-full max-w-md">
