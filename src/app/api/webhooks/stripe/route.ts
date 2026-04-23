@@ -1,10 +1,6 @@
-// src/app/api/webhooks/stripe/route.ts
+export const dynamic = "force-dynamic";
 import Stripe from "stripe";
 import { prismaClient } from "@/src/lib/service/prisma";
-
-export const config = {
-  api: { bodyParser: false }, // Important for Stripe signature verification
-};
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-09-30.clover",

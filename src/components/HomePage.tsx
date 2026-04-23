@@ -14,7 +14,7 @@ export default function App() {
     const handleGetStarted = () => {
         switch (userState) {
             case 'not_logged_in':
-                window.location.href = '/login';
+                window.location.href = '/sign-in';
                 break;
             case 'logged_in':
                 window.location.href = '/role-selection';
@@ -53,7 +53,7 @@ export default function App() {
 
                         {/* Right Side */}
                         <div className="flex items-center gap-4">
-                            <Link href="/login" className="hidden lg:inline-block text-sm font-medium text-gray-900 hover:text-green-600">
+                            <Link href="/sign-in" className="hidden lg:inline-block text-sm font-medium text-gray-900 hover:text-green-600">
                                 Log in
                             </Link>
                             <button className="hidden lg:inline-block px-6 py-2 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition">
@@ -75,9 +75,9 @@ export default function App() {
                 {mobileMenuOpen && (
                     <div className="lg:hidden border-t border-gray-200 bg-white">
                         <div className="px-4 py-4 space-y-3">
-                            <a href="#" className="block text-sm font-medium text-gray-900">Why Lancify</a>
-                            <a href="#" className="block text-sm font-medium text-gray-900">{"What's new"}</a>
-                            <a href="/login" className="block text-sm font-medium text-gray-900">Log in</a>
+                            <Link href="#" className="block text-sm font-medium text-gray-900">Why Lancify</Link>
+                            <Link href="#" className="block text-sm font-medium text-gray-900">{"What's new"}</Link>
+                            <Link href="/sign-in" className="block text-sm font-medium text-gray-900">Log in</Link>
                             <button className="w-full px-6 py-2 bg-green-600 text-white rounded-full font-medium">
                                 Sign up
                             </button>

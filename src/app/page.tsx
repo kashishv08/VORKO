@@ -1,11 +1,11 @@
 "use client";
 
-import { Search, Menu, X, ChevronDown, Settings, Code, Palette, TrendingUp, FileText, Briefcase, DollarSign, Scale, Users, Wrench, Video, Layers, Sparkles, ShieldCheck, CreditCard, LayoutDashboard, Zap } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
-import { useUser, UserButton } from "@clerk/nextjs";
-import Link from 'next/link';
-import Image from 'next/image';
 import { LancifyLogo } from '@/src/components/LancifyLogo';
+import { UserButton, useUser } from "@clerk/nextjs";
+import { Briefcase, ChevronDown, Code, CreditCard, DollarSign, FileText, Layers, LayoutDashboard, Palette, Scale, Settings, ShieldCheck, Sparkles, TrendingUp, Users, Video, Wrench, Zap } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 
 export default function App() {
     const { isSignedIn } = useUser();
