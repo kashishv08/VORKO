@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
 import { getUserChats } from "@/src/app/api/graphql/resolvers/chat";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const chats = await getUserChats(); // server-side safe
