@@ -3,10 +3,14 @@ import { prismaClient } from "@/src/lib/service/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { StreamChat } from "stream-chat";
 
-const serverClient = StreamChat.getInstance(
-  process.env.NEXT_PUBLIC_STREAM_API_KEY!,
-  process.env.STREAM_API_SECRET!
-);
+const getServerClient = () => {
+  const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY!;
+  const apiSecret = process.env.STREAM_API_SECRET!;
+  if (!apiKey || !apiSecret) {
+    throw new Error("Stream API key or secret is missing.");
+  }
+  return StreamChat.getInstance(apiKey, apiSecret);
+};
 
 async function getCurrentUserFromDB() {
   const { userId } = await auth();
@@ -116,6 +120,7 @@ export const getRecentMessages = async () => {
       created_by_id: string;
     }
 
+    const serverClient = getServerClient();
     const channel = serverClient.channel("messaging", contract.id, {
       name: `Chat for ${contract.project.title}`,
       members: [user.id, otherUser.id],
