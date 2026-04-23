@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { prismaClient } from "@/src/lib/service/prisma";
 import stripe from "@/src/lib/service/stripe";

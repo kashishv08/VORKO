@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { getUserChats } from "@/src/app/api/graphql/resolvers/chat";
 
 export async function GET() {

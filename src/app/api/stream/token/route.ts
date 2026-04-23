@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { StreamClient } from "@stream-io/node-sdk";
 import { auth, currentUser } from "@clerk/nextjs/server";
