@@ -33,14 +33,14 @@ export default function Signin() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
       <div className="mb-8 flex flex-col items-center">
-        <div className="mb-4">
-          <LancifyLogo />
-        </div>
+        {/* <div className="mb-4"> */}
+        {/* <LancifyLogo /> */}
+        {/* </div> */}
         {/* <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
         <p className="text-slate-500 mt-1">Please enter your details to sign in</p> */}
       </div>
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md justify-center items-center">
         <SignIn
           fallbackRedirectUrl="/role-selection"
           appearance={{
