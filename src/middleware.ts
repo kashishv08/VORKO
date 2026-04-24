@@ -51,9 +51,10 @@ export default clerkMiddleware(async (auth, req) => {
 
   const onboardingComplete = publicMetadata.onboardingComplete ?? false;
   const stripeConnected = publicMetadata.stripeConnected ?? false;
+  const stripeCookie = req.cookies.get("stripe_connected")?.value === "true";
 
   // Add this line around line 46 in middleware.ts:
-  console.log("MIDDLEWARE CHECK:", { pathname, role, onboardingComplete });
+  console.log("MIDDLEWARE CHECK:", { pathname, role, onboardingComplete, stripeConnected, stripeCookie });
 
 
 
@@ -72,6 +73,7 @@ export default clerkMiddleware(async (auth, req) => {
     role === "FREELANCER" &&
     onboardingComplete &&
     !stripeConnected &&
+    !stripeCookie &&
     pathname.startsWith("/freelancer") &&
     !pathname.includes("/onboarding/stripe") &&
     url.searchParams.get("synced") !== "true"

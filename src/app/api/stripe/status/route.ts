@@ -55,7 +55,18 @@ export async function GET() {
     const isConnected = dbUser.stripeConnected || account.details_submitted;
     console.log("Final connection status:", isConnected);
 
-    return NextResponse.json({ connected: isConnected });
+    const response = NextResponse.json({ connected: isConnected });
+    
+    if (isConnected) {
+      response.cookies.set("stripe_connected", "true", {
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      });
+    }
+
+    return response;
   } catch (error: unknown) {
     console.error("STRIPE STATUS API ERROR:", error);
     const err = error as Error;
