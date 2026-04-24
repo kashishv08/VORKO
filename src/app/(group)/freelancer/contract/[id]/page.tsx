@@ -23,7 +23,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 
 const schema = z.object({
   workDescription: z.string().min(20, "Please describe your work (min 20 characters)"),
-  deliverableUrl: z.string().optional(),
+  deliverableUrl: z.string().url("Please enter a valid URL").refine((url) => url.includes("github.com"), "Please provide a GitHub repository URL"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -56,6 +56,14 @@ export default function FreelancerContractDetailPage() {
   const handleSubmit = async () => {
     if (workDescription.length < 20) {
       toast.error("Description must be at least 20 characters");
+      return;
+    }
+    if (!deliverableUrl) {
+      toast.error("GitHub repository URL is required");
+      return;
+    }
+    if (!deliverableUrl.includes("github.com")) {
+      toast.error("Please provide a valid GitHub URL (e.g., github.com/username/repo)");
       return;
     }
     await onSubmit({ workDescription, deliverableUrl });
@@ -211,7 +219,7 @@ export default function FreelancerContractDetailPage() {
           {contract.deliverableUrl && (
             <a href={contract.deliverableUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
               <FileText className="w-3.5 h-3.5" />
-              View Deliverable Link
+              View GitHub Repository
             </a>
           )}
         </div>
@@ -232,10 +240,10 @@ export default function FreelancerContractDetailPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Deliverable Link (Optional)</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">GitHub Repository URL</p>
               <input
                 type="url"
-                placeholder="https://..."
+                placeholder="https://github.com/username/repo"
                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 value={deliverableUrl}
                 onChange={(e) => setDeliverableUrl(e.target.value)}
